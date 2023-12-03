@@ -1,0 +1,56 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP4 to JPEG Image Sequence</title>
+</head>
+<body>
+    <input type="file" id="videoInput" accept="video/mp4" />
+    <button onclick="convertVideo()">Convert</button>
+    <script>
+        function convertVideo() {
+            const input = document.getElementById('videoInput');
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(input.files[0]);
+            video.controls = true;
+            document.body.appendChild(video);
+
+            video.addEventListener('loadeddata', () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                document.body.appendChild(canvas);
+
+                const fps = 24; // frames per second
+                const totalFrames = Math.floor(video.duration * fps);
+                let currentFrame = 0;
+
+                function captureFrame() {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = canvas.toDataURL('image/jpeg');
+                    downloadImage(imageData, currentFrame);
+
+                    currentFrame++;
+                    if (currentFrame < totalFrames) {
+                        video.currentTime = currentFrame / fps;
+                    } else {
+                        document.body.removeChild(video);
+                        document.body.removeChild(canvas);
+                    }
+                }
+
+                video.addEventListener('seeked', captureFrame);
+                captureFrame(); // Start the process
+            });
+        }
+
+        function downloadImage(dataUrl, frameNumber) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `frame_${frameNumber}.jpg`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
