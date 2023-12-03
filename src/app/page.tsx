@@ -9,15 +9,39 @@ export default function Home() {
     let mediaPool: HTMLDivElement | null = null;
     let fps = 60;
     let timelineRows: timelineRow[] = [];
+    let timelineRowsElement: HTMLDivElement;
     let playing = false;
     let timelineTime = 0;
     let currentTime: number;
     let previousTime: number; 
+    let mouseOverTimelineIndex: number = -1;
 
+
+    useEffect(() => {    
+        previewCanvas = document.getElementById("previewCanvas") as HTMLCanvasElement;
+        previewCTX = previewCanvas.getContext("2d") as CanvasRenderingContext2D;
+        playhead = document.getElementById("playhead") as HTMLInputElement;
+        mediaPool = document.getElementById("mediaPool") as HTMLDivElement;
+        timelineRowsElement = document.getElementById("timelineRows") as HTMLDivElement;
+        
+
+        
+    }, []);
+    
     class timelineRow {
         videos: timelineVideo[];
-        constructor() {
+        ui: HTMLDivElement;
+        id: number;
+        constructor(id: number) {
             this.videos = [];
+            this.ui = document.createElement("div");
+            this.id = id;
+            this.ui.className = "flex flex-col items-center w-full bg-slate-800 my-1 py-5";
+            this.ui.setAttribute("timelineRowId", id.toString());
+            timelineRowsElement.appendChild(this.ui);
+            
+            
+
         }
         addVideo(timelineVideo: timelineVideo) {
             this.videos.push(timelineVideo);
@@ -41,12 +65,7 @@ export default function Home() {
         }
     }
     
-    useEffect(() => {    
-        previewCanvas = document.getElementById("previewCanvas") as HTMLCanvasElement;
-        previewCTX = previewCanvas.getContext("2d") as CanvasRenderingContext2D;
-        playhead = document.getElementById("playhead") as HTMLInputElement;
-        mediaPool = document.getElementById("mediaPool") as HTMLDivElement;
-    }, []);
+    
 
     
 
@@ -125,11 +144,86 @@ export default function Home() {
         video.height = 900;
 
         const media = URL.createObjectURL(file);
-
         video.src = media;
+        timelineRows.push(new timelineRow(0));
         timelineRows[0].addVideo(new timelineVideo(0,10,0,10,video))
+        video.addEventListener('mousedown', (e) => {     
+            e.preventDefault();       
+            dragVideo(e);
+            
+        });
+        
+        
         
     }
+
+    function dragVideo(event: MouseEvent) {
+        event.preventDefault();
+        const clickedElement = event.target as HTMLVideoElement;
+        let tempVideo = document.createElement("video");
+        tempVideo.src = clickedElement.src;
+        document.body.appendChild(tempVideo);
+        tempVideo.className = "absolute pointer-events-none";
+        tempVideo.style.width="160px";
+        const handleMouseMove = (e: MouseEvent) => {
+            e.preventDefault();
+            updateDraggedVideoPosition(e, tempVideo);
+          };
+
+        const handleMouseUp = (e: MouseEvent) => {
+            e.preventDefault();
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+            tempVideo.removeAttribute("src");
+            tempVideo.remove();
+            for (let i=0; i<timelineRows.length; i++) {
+                timelineRows[i].ui.removeEventListener('mouseup', handleMouseUpOnTimeline);
+            }
+          };
+      
+        const handleMouseUpOnTimeline = (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            let target = e.target as HTMLDivElement;
+            if (target.getAttribute("timelineRowId")!=null) {
+                endDragVideo(tempVideo, parseInt(target.getAttribute("timelineRowId")!));
+            }
+            
+            for (let i=0; i<timelineRows.length; i++) {
+                timelineRows[i].ui.removeEventListener('mouseup', handleMouseUpOnTimeline);
+            }
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        }
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+        for (let i=0; i<timelineRows.length; i++) {
+            timelineRows[i].ui.addEventListener('mouseup', handleMouseUpOnTimeline); 
+
+        }
+        
+
+        
+        
+        
+    
+        
+    }
+
+
+    
+    function updateDraggedVideoPosition(e: MouseEvent, tempVideo: HTMLVideoElement) {
+        tempVideo.style.left = e.x+"px";
+        tempVideo.style.top = e.y+"px";
+    }
+
+    function endDragVideo(tempVideo: HTMLVideoElement, i: number) {
+        console.log(i);
+        tempVideo.removeAttribute("src");
+        tempVideo.remove();
+    }
+
+    
 
     function updatePlayhead(e: React.ChangeEvent<HTMLInputElement>) {
         playing = false;
@@ -141,7 +235,7 @@ export default function Home() {
         playing = !playing;
     }
 
-    timelineRows.push(new timelineRow());
+    
     
 
     return (
@@ -158,8 +252,9 @@ export default function Home() {
                         id="input"
                         name="input_video"
                         accept="video/mp4, video/mov"
+                        className="mx-2 my-2"
                     />
-                    <div id="mediaPool" className="grid grid-cols-2 gap-4 w-full h-full py-5">
+                    <div id="mediaPool" className="px-2 grid grid-cols-2 gap-4 w-full h-full">
                     
                     </div>
                 </div>
@@ -180,17 +275,9 @@ export default function Home() {
                 </div>
             
             </div>
-            <div className="flex flex-col items-center w-full">
-                <div className="flex flex-col items-center w-[95vw]">
-                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-                        Timeline Row 1
-                    </div>
-                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-                        Timeline Row 2
-                    </div>
-                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-                        Timeline Row 3
-                    </div>
+            <div className="flex flex-col items-center w-full select-none">
+                <div id="timelineRows" className="flex flex-col items-center w-[95vw]">
+
                 </div>
                 <div className="flex flex-col items-center w-[95vw]">
                     <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
