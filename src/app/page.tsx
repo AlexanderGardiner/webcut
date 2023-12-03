@@ -9,6 +9,35 @@ export default function Home() {
     let playhead: HTMLInputElement;
     let mediaPool: HTMLDivElement | null = null;
     let fps = 60;
+    let timelineRows: timelineRow[] = [];
+
+    class timelineRow {
+        videos: timelineVideo[];
+        constructor() {
+            this.videos = [];
+        }
+        addVideo(timelineVideo: timelineVideo) {
+            this.videos.push(timelineVideo);
+            step();
+        }
+
+    }
+
+    class timelineVideo {
+        inPoint: number;
+        outPoint: number;
+        startPoint: number;
+        endPoint: number;
+        video: HTMLVideoElement;
+        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, video: HTMLVideoElement) {
+            this.inPoint = inPoint;
+            this.outPoint = outPoint;
+            this.startPoint = startPoint;
+            this.endPoint = endPoint;
+            this.video = video;
+        }
+    }
+    
     useEffect(() => {    
         previewCanvas = document.getElementById("previewCanvas") as HTMLCanvasElement;
         previewCTX = previewCanvas.getContext("2d") as CanvasRenderingContext2D;
@@ -16,36 +45,52 @@ export default function Home() {
         mediaPool = document.getElementById("mediaPool") as HTMLDivElement;
     }, []);
 
+    
+
     function step() {
-        previewCTX.drawImage(
-        video,
-        0,
-        0,
-        previewCTX.canvas.width,
-        previewCTX.canvas.height
-        );
-        previewCTX.save();
-        
-        // Move registration point to the center of the previewCanvas
-        previewCTX.translate(100+1600/2,100+900/2);
-        previewCTX.rotate(Math.PI/4);// angle must be in radians
-        previewCTX.scale(0.25, 0.25);
-        // Move registration point back to the top left corner of previewCanvas
-        previewCTX.translate((-1600)/2, (-900)/2);
-        previewCTX.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
-        previewCTX.restore();
-  
-        previewCTX.save();
-        previewCTX.translate(-100+1600/2,100+900/2);
-        previewCTX.rotate(-Math.PI/4);// angle must be in radians
-        previewCTX.scale(0.25, 0.25);
-        // Move registration point back to the top left corner of previewCanvas
-        previewCTX.translate((-1600)/2, (-900)/2);
-        previewCTX.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
-        previewCTX.restore();
-
+        previewCTX.clearRect(0,0, previewCanvas.width, previewCanvas.height);
         playhead.value = String(video.currentTime);
+        for (let i=0; i<timelineRows.length; i++) {
+            for (let j=0; j<timelineRows[i].videos.length; j++) {
+                if (timelineRows[i].videos[j].startPoint<parseFloat(playhead.value) && timelineRows[i].videos[j].endPoint>parseFloat(playhead.value)) {
+                    previewCTX.drawImage(
+                        timelineRows[i].videos[j].video,
+                        0,
+                        0,
+                        previewCTX.canvas.width,
+                        previewCTX.canvas.height
+                        );
+                }
+            }
+        }
+        // previewCTX.drawImage(
+        // video,
+        // 0,
+        // 0,
+        // previewCTX.canvas.width,
+        // previewCTX.canvas.height
+        // );
+        // previewCTX.save();
+        
+        // // Move registration point to the center of the previewCanvas
+        // previewCTX.translate(100+1600/2,100+900/2);
+        // previewCTX.rotate(Math.PI/4);// angle must be in radians
+        // previewCTX.scale(0.25, 0.25);
+        // // Move registration point back to the top left corner of previewCanvas
+        // previewCTX.translate((-1600)/2, (-900)/2);
+        // previewCTX.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+        // previewCTX.restore();
+  
+        // previewCTX.save();
+        // previewCTX.translate(-100+1600/2,100+900/2);
+        // previewCTX.rotate(-Math.PI/4);// angle must be in radians
+        // previewCTX.scale(0.25, 0.25);
+        // // Move registration point back to the top left corner of previewCanvas
+        // previewCTX.translate((-1600)/2, (-900)/2);
+        // previewCTX.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+        // previewCTX.restore();
 
+        
         setTimeout(step, 1000 / fps);
     }
 
@@ -61,9 +106,7 @@ export default function Home() {
         const media = URL.createObjectURL(file);
 
         video.src = media;
-        video.addEventListener('canplaythrough', function () {
-            step();
-        });
+        timelineRows[0].addVideo(new timelineVideo(0,10,0,10,video))
         
     }
 
@@ -79,6 +122,10 @@ export default function Home() {
             video.pause();
         }
     }
+
+    timelineRows.push(new timelineRow());
+    
+
     return (
         <div>
             <div className="grid grid-cols-5 gap-4 max-w-full my-5 mx-5">
@@ -104,7 +151,7 @@ export default function Home() {
                     <button onClick={toggleVideoPlay}>
                         <FaPlay className="" style={{ color: "#6a84f4" }} size={20}/>
                     </button>
-                    <input onChange={updatePlayhead} id="playhead" type="range" defaultValue="0" min="0" max="30" step="0.01" className="w-4/5 my-5 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"></input>
+                    <input onChange={updatePlayhead} id="playhead" type="range" defaultValue="0" min="0" max="100" step="0.01" className="w-4/5 my-5 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"></input>
                 </div>
 
                 
@@ -114,6 +161,31 @@ export default function Home() {
                 </div>
             
             </div>
+            <div className="flex flex-col items-center w-full">
+                <div className="flex flex-col items-center w-[95vw]">
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Timeline Row 1
+                    </div>
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Timeline Row 2
+                    </div>
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Timeline Row 3
+                    </div>
+                </div>
+                <div className="flex flex-col items-center w-[95vw]">
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Audio Row 1
+                    </div>
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Audio Row 2
+                    </div>
+                    <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
+                        Audio Row 3
+                    </div>
+                </div>
+            </div>
+            
             
         </div>
     );
