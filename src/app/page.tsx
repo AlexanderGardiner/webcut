@@ -147,7 +147,7 @@ export default function Home() {
     return (
         <div>
             <div className="grid grid-cols-5 gap-4 max-w-full my-5 mx-5">
-                <div className="items-start text-left w-fit">
+                <div className="border-2 border-gray-400 items-start text-left w-full items-center overflow-y-scroll max-h-[50vh]">
                     <input
                         onChange={(e) => {
                         if (e.target.files) {
@@ -159,11 +159,12 @@ export default function Home() {
                         name="input_video"
                         accept="video/mp4, video/mov"
                     />
-                    <div id="mediaPool" className="grid grid-cols-3 gap-4 w-full py-5">
+                    <div id="mediaPool" className="grid grid-cols-2 gap-4 w-full h-full py-5">
+                    
                     </div>
                 </div>
                 <div className="resize-y flex flex-col items-center justify-start max-h-[90vh] min-h-[300px] max-w-full h-min overflow-hidden col-span-3">
-                    <div className="flex flex-col items-center justify-start h-3/5 max-w-full mb-5">
+                    <div className="flex flex-col items-center justify-start h-[50vh] max-w-full mb-5">
                         <canvas id="previewCanvas" width="1600" height="900" className="border-2 border-gray-400 w-min max-h-full max-w-full"></canvas>
                     </div>
                     <button onClick={toggleVideoPlay}>
@@ -174,7 +175,7 @@ export default function Home() {
 
                 
 
-                <div className="items-end text-right w-fit">
+                <div className="items-end text-right max-h-[50vh] border-2 border-gray-400 w-full">
                     <h1>Properties</h1>
                 </div>
             
