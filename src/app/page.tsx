@@ -5,11 +5,14 @@ import { FaPlay } from "react-icons/fa";
 export default function Home() {
     let previewCanvas: HTMLCanvasElement;
     let previewCTX: CanvasRenderingContext2D;
-    let video: HTMLVideoElement;
     let playhead: HTMLInputElement;
     let mediaPool: HTMLDivElement | null = null;
     let fps = 60;
     let timelineRows: timelineRow[] = [];
+    let playing = false;
+    let timelineTime = 0;
+    let currentTime: number;
+    let previousTime: number; 
 
     class timelineRow {
         videos: timelineVideo[];
@@ -48,11 +51,24 @@ export default function Home() {
     
 
     function step() {
+        currentTime = performance.now();
         previewCTX.clearRect(0,0, previewCanvas.width, previewCanvas.height);
-        playhead.value = String(video.currentTime);
+        if (playing) {
+            timelineTime += (currentTime-previousTime)/1000;
+            playhead.value = timelineTime.toString();
+        }
+        
         for (let i=0; i<timelineRows.length; i++) {
             for (let j=0; j<timelineRows[i].videos.length; j++) {
-                if (timelineRows[i].videos[j].startPoint<parseFloat(playhead.value) && timelineRows[i].videos[j].endPoint>parseFloat(playhead.value)) {
+                if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint>=timelineTime) {
+                    if (!playing) {
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                    }
+                    if (playing && timelineRows[i].videos[j].video.paused) {
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                        timelineRows[i].videos[j].video.play();
+                        console.log("playing");
+                    }  
                     previewCTX.drawImage(
                         timelineRows[i].videos[j].video,
                         0,
@@ -60,6 +76,11 @@ export default function Home() {
                         previewCTX.canvas.width,
                         previewCTX.canvas.height
                         );
+                } else {
+                    timelineRows[i].videos[j].video.pause();
+                }
+                if (!playing) {
+                    timelineRows[i].videos[j].video.pause();
                 }
             }
         }
@@ -90,12 +111,12 @@ export default function Home() {
         // previewCTX.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
         // previewCTX.restore();
 
-        
+        previousTime = currentTime;
         setTimeout(step, 1000 / fps);
     }
 
     function importVideo(file: File) {
-        video = document.createElement("video");
+        let video = document.createElement("video");
         if (mediaPool) {
             mediaPool.appendChild(video);
         }
@@ -111,16 +132,13 @@ export default function Home() {
     }
 
     function updatePlayhead(e: React.ChangeEvent<HTMLInputElement>) {
-        video.pause();
-        video.currentTime = parseFloat(e.target.value);
+        playing = false;
+
+        timelineTime = parseFloat(e.target.value);
     }
 
     function toggleVideoPlay() {
-        if (video.paused) {
-            video.play();
-        } else {
-            video.pause();
-        }
+        playing = !playing;
     }
 
     timelineRows.push(new timelineRow());
