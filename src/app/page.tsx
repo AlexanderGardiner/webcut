@@ -7,14 +7,14 @@ export default function Home() {
     let previewCTX: CanvasRenderingContext2D;
     let playhead: HTMLInputElement;
     let mediaPool: HTMLDivElement | null = null;
+    let playheadDiv: HTMLDivElement;
     let fps = 60;
     let timelineRows: timelineRow[] = [];
     let timelineRowsElement: HTMLDivElement;
     let playing = false;
-    let timelineTime = 0;
     let currentTime: number;
     let previousTime: number; 
-    let mouseOverTimelineIndex: number = -1;
+    let timelineTime:number = 0;
 
 
     useEffect(() => {    
@@ -23,8 +23,11 @@ export default function Home() {
         playhead = document.getElementById("playhead") as HTMLInputElement;
         mediaPool = document.getElementById("mediaPool") as HTMLDivElement;
         timelineRowsElement = document.getElementById("timelineRows") as HTMLDivElement;
+        playheadDiv = document.getElementById("playheadDiv") as HTMLDivElement;
         
-
+        timelineRows.push(new timelineRow(0));
+        playheadDiv.style.position = "relative";
+        playheadDiv.style.width = "6px";
         
     }, []);
     
@@ -36,7 +39,7 @@ export default function Home() {
             this.videos = [];
             this.ui = document.createElement("div");
             this.id = id;
-            this.ui.className = "flex flex-col items-center w-full bg-slate-800 my-1 py-5";
+            this.ui.className = "flex flex-col w-full bg-slate-800 my-1 py-5";
             this.ui.setAttribute("timelineRowId", id.toString());
             timelineRowsElement.appendChild(this.ui);
             
@@ -56,12 +59,23 @@ export default function Home() {
         startPoint: number;
         endPoint: number;
         video: HTMLVideoElement;
-        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, video: HTMLVideoElement) {
+        ui: HTMLDivElement;
+        timelineRowId: number;
+        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement) {
             this.inPoint = inPoint;
             this.outPoint = outPoint;
             this.startPoint = startPoint;
             this.endPoint = endPoint;
+            this.timelineRowId = timelineRowId
             this.video = video;
+            this.ui = document.createElement("div");
+            
+            this.ui.className = "flex flex-col bg-slate-100 py-5 px-0";
+            timelineRows[timelineRowId].ui.appendChild(this.ui);
+            console.log((timelineRows[timelineRowId].ui.clientWidth * this.video.duration/100).toString())
+            this.ui.setAttribute("style",`width: ${(timelineRows[timelineRowId].ui.clientWidth * this.video.duration/100).toString()}px; 
+                                          left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint+1)/100).toString()}px;
+                                          position: relative;`);
         }
     }
     
@@ -70,6 +84,7 @@ export default function Home() {
     
 
     function step() {
+        playheadDiv.style.left = (-3+timelineRows[0].ui.clientWidth * (timelineTime+1)/100).toString()+"px";
         currentTime = performance.now();
         previewCTX.clearRect(0,0, previewCanvas.width, previewCanvas.height);
         if (playing) {
@@ -81,11 +96,17 @@ export default function Home() {
             for (let j=0; j<timelineRows[i].videos.length; j++) {
                 if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint>=timelineTime) {
                     if (!playing) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 1;
                     }
                     if (playing && timelineRows[i].videos[j].video.paused) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
-                        timelineRows[i].videos[j].video.play();
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 1;
+                        console.log(timelineRows[i].videos[j].video.currentTime);
+                        console.log("timeline Time "+timelineTime)
+                        console.log("timeline Time "+timelineRows[i].videos[j].startPoint)
+                        timelineRows[i].videos[j].video.addEventListener('seeked', function handleSeeked() {
+                            timelineRows[i].videos[j].video.play();
+                        });
+                        
                         console.log("playing");
                     }  
                     previewCTX.drawImage(
@@ -133,8 +154,9 @@ export default function Home() {
         previousTime = currentTime;
         setTimeout(step, 1000 / fps);
     }
-
+    
     function importVideo(file: File) {
+        
         let video = document.createElement("video");
         if (mediaPool) {
             mediaPool.appendChild(video);
@@ -145,11 +167,11 @@ export default function Home() {
 
         const media = URL.createObjectURL(file);
         video.src = media;
-        timelineRows.push(new timelineRow(0));
-        timelineRows[0].addVideo(new timelineVideo(0,10,0,10,video))
+        
+        //timelineRows[0].addVideo(new timelineVideo(0,10,0,10,video))
         video.addEventListener('mousedown', (e) => {     
             e.preventDefault();       
-            dragVideo(e);
+            dragVideo(e, video);
             
         });
         
@@ -157,7 +179,7 @@ export default function Home() {
         
     }
 
-    function dragVideo(event: MouseEvent) {
+    function dragVideo(event: MouseEvent, video: HTMLVideoElement) {
         event.preventDefault();
         const clickedElement = event.target as HTMLVideoElement;
         let tempVideo = document.createElement("video");
@@ -186,7 +208,7 @@ export default function Home() {
             e.stopPropagation();
             let target = e.target as HTMLDivElement;
             if (target.getAttribute("timelineRowId")!=null) {
-                endDragVideo(tempVideo, parseInt(target.getAttribute("timelineRowId")!));
+                endDragVideo(e, tempVideo, parseInt(target.getAttribute("timelineRowId")!), video);
             }
             
             for (let i=0; i<timelineRows.length; i++) {
@@ -217,8 +239,15 @@ export default function Home() {
         tempVideo.style.top = e.y+"px";
     }
 
-    function endDragVideo(tempVideo: HTMLVideoElement, i: number) {
+    function endDragVideo(e: MouseEvent, tempVideo: HTMLVideoElement, i: number, originalVideo: HTMLVideoElement) {
         console.log(i);
+        var rect = timelineRows[i].ui.getBoundingClientRect(); 
+        var x = 100*(e.clientX - rect.left)/rect.width; 
+        var y = 100*(e.clientY - rect.top)/rect.height; 
+        timelineRows[i].addVideo(new timelineVideo(0, tempVideo.duration,x,x+tempVideo.duration,i,originalVideo));
+
+        console.log(timelineRows[0])
+        console.log("x: "+x+" y: "+ y)
         tempVideo.removeAttribute("src");
         tempVideo.remove();
     }
@@ -229,6 +258,9 @@ export default function Home() {
         playing = false;
 
         timelineTime = parseFloat(e.target.value);
+        
+        playheadDiv.style.left = (-3+timelineRows[0].ui.clientWidth * (timelineTime+1)/100).toString()+"px";
+        console.log(timelineTime.toString())
     }
 
     function toggleVideoPlay() {
@@ -265,7 +297,7 @@ export default function Home() {
                     <button onClick={toggleVideoPlay}>
                         <FaPlay className="" style={{ color: "#6a84f4" }} size={20}/>
                     </button>
-                    <input onChange={updatePlayhead} id="playhead" type="range" defaultValue="0" min="0" max="100" step="0.01" className="w-4/5 my-5 w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"></input>
+                    
                 </div>
 
                 
@@ -275,7 +307,28 @@ export default function Home() {
                 </div>
             
             </div>
-            <div className="flex flex-col items-center w-full select-none">
+            <div className="flex flex-col items-center justify-center w-full select-none">
+                <div className="relative flex flex-col w-[95vw] bg-white h-5 my-5">
+                    <input
+                    onChange={updatePlayhead}
+                    id="playhead"
+                    type="range"
+                    defaultValue="1"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="opacity-0 absolute w-[95vw] bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    ></input>
+
+                    <div
+                    id="playheadDiv"
+                    className={`relative top-0 left-0 right-0 bottom-0 flex flex-col items-center bg-slate-800 w-6 py-2 my-auto`}
+                    >
+                    {/* Your content goes here */}
+                    </div>
+                </div>
+
+
                 <div id="timelineRows" className="flex flex-col items-center w-[95vw]">
 
                 </div>
