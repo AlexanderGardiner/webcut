@@ -39,7 +39,7 @@ export default function Home() {
             this.videos = [];
             this.ui = document.createElement("div");
             this.id = id;
-            this.ui.className = "flex flex-col w-full bg-slate-800 my-1 py-5 max-h-10 flex justify-center";
+            this.ui.className = "flex flex-col w-full bg-slate-800 my-1 py-5 max-h-10 flex justify-center relative";
             this.ui.setAttribute("timelineRowId", id.toString());
             timelineRowsElement.appendChild(this.ui);
             
@@ -61,6 +61,7 @@ export default function Home() {
         video: HTMLVideoElement;
         ui: HTMLDivElement;
         timelineRowId: number;
+        previewImage: HTMLImageElement;
         constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement) {
             this.inPoint = inPoint;
             this.outPoint = outPoint;
@@ -70,7 +71,19 @@ export default function Home() {
             this.video = video;
             this.ui = document.createElement("div");
             
-            this.ui.className = "flex relative bg-slate-100 py-5 px-0 pointer-events-none";
+            this.ui.className = "absolute flex bg-slate-100 py-5 px-0 pointer-events-none";
+            this.previewImage = document.createElement("img");
+            const previewImageCanvas = document.createElement('canvas');
+            previewImageCanvas.width = this.video.videoWidth;
+            previewImageCanvas.height = this.video.videoHeight;
+            const previewImageCTX = previewImageCanvas.getContext('2d');
+            if (previewImageCTX) {
+                previewImageCTX.drawImage(video, 0, 0, previewImageCanvas.width, previewImageCanvas.height);
+            }
+            this.previewImage.src = previewImageCanvas.toDataURL('image/png');
+            this.previewImage.className = "absolute w-full overflow-hidden h-full min-w-max"
+            this.previewImage.setAttribute("style","top:0px;");
+            this.ui.appendChild(this.previewImage);
             timelineRows[timelineRowId].ui.appendChild(this.ui);
             this.ui.setAttribute("style", `
                 width: ${(timelineRows[timelineRowId].ui.clientWidth * this.video.duration / 100).toString()}px; 
@@ -179,22 +192,33 @@ export default function Home() {
     function dragVideo(event: MouseEvent, video: HTMLVideoElement) {
         event.preventDefault();
         const clickedElement = event.target as HTMLVideoElement;
-        let tempVideo = document.createElement("video");
-        tempVideo.src = clickedElement.src;
-        document.body.appendChild(tempVideo);
-        tempVideo.className = "absolute pointer-events-none";
-        tempVideo.style.width="160px";
+        let tempVideoImage = document.createElement("img");
+        const previewImageCanvas = document.createElement('canvas');
+        previewImageCanvas.width = video.videoWidth;
+        previewImageCanvas.height = video.videoHeight;
+        const previewImageCTX = previewImageCanvas.getContext('2d');
+        if (previewImageCTX) {
+            previewImageCTX.drawImage(video, 0, 0, previewImageCanvas.width, previewImageCanvas.height);
+        }
+        tempVideoImage.src = previewImageCanvas.toDataURL('image/png');
+        tempVideoImage.setAttribute("style", `
+                width: ${(timelineRows[0].ui.clientWidth * video.duration / 100).toString()}px; 
+                left: 0px;
+            `);
+        document.body.appendChild(tempVideoImage);
+        
+        tempVideoImage.className = "h-10 absolute pointer-events-none";
         const handleMouseMove = (e: MouseEvent) => {
             e.preventDefault();
-            updateDraggedVideoPosition(e, tempVideo);
+            updateDraggedVideoPosition(e, tempVideoImage);
           };
 
         const handleMouseUp = (e: MouseEvent) => {
             e.preventDefault();
             document.removeEventListener("mousemove", handleMouseMove);
             document.removeEventListener("mouseup", handleMouseUp);
-            tempVideo.removeAttribute("src");
-            tempVideo.remove();
+            tempVideoImage.removeAttribute("src");
+            tempVideoImage.remove();
             for (let i=0; i<timelineRows.length; i++) {
                 timelineRows[i].ui.removeEventListener('mouseup', handleMouseUpOnTimeline);
             }
@@ -205,7 +229,7 @@ export default function Home() {
             e.stopPropagation();
             let target = e.target as HTMLDivElement;
             if (target.getAttribute("timelineRowId")!=null) {
-                endDragVideo(e, tempVideo, parseInt(target.getAttribute("timelineRowId")!), video);
+                endDragVideo(e, tempVideoImage, parseInt(target.getAttribute("timelineRowId")!), video);
             }
             
             for (let i=0; i<timelineRows.length; i++) {
@@ -231,16 +255,26 @@ export default function Home() {
 
 
     
-    function updateDraggedVideoPosition(e: MouseEvent, tempVideo: HTMLVideoElement) {
+    function updateDraggedVideoPosition(e: MouseEvent, tempVideo: HTMLImageElement) {
+
         tempVideo.style.left = e.x+"px";
         tempVideo.style.top = e.y+"px";
     }
 
-    function endDragVideo(e: MouseEvent, tempVideo: HTMLVideoElement, i: number, originalVideo: HTMLVideoElement) {
+    function endDragVideo(e: MouseEvent, tempVideo: HTMLImageElement, i: number, originalVideo: HTMLVideoElement) {
         var rect = timelineRows[i].ui.getBoundingClientRect(); 
         var x = 100*(e.clientX - rect.left)/rect.width; 
         var y = 100*(e.clientY - rect.top)/rect.height; 
-        timelineRows[i].addVideo(new timelineVideo(0, tempVideo.duration,x-1,x+tempVideo.duration-1,i,originalVideo));
+        let canAddVideo = true;
+        for (let j=0; j<timelineRows[i].videos.length; j++) {
+            if (timelineRows[i].videos[j].startPoint<x+originalVideo.duration-1 && timelineRows[i].videos[j].endPoint>x-1) {
+                canAddVideo = false;
+            }
+        }
+        if (canAddVideo) {
+            timelineRows[i].addVideo(new timelineVideo(0, originalVideo.duration,x-1,x+originalVideo.duration-1,i,originalVideo));
+
+        }
 
         tempVideo.removeAttribute("src");
         tempVideo.remove();
