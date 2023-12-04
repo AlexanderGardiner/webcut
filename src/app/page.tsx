@@ -39,7 +39,7 @@ export default function Home() {
             this.videos = [];
             this.ui = document.createElement("div");
             this.id = id;
-            this.ui.className = "flex flex-col w-full bg-slate-800 my-1 py-5";
+            this.ui.className = "flex flex-col w-full bg-slate-800 my-1 py-5 max-h-10 flex justify-center";
             this.ui.setAttribute("timelineRowId", id.toString());
             timelineRowsElement.appendChild(this.ui);
             
@@ -70,12 +70,13 @@ export default function Home() {
             this.video = video;
             this.ui = document.createElement("div");
             
-            this.ui.className = "flex flex-col bg-slate-100 py-5 px-0";
+            this.ui.className = "flex relative bg-slate-100 py-5 px-0 pointer-events-none";
             timelineRows[timelineRowId].ui.appendChild(this.ui);
-            console.log((timelineRows[timelineRowId].ui.clientWidth * this.video.duration/100).toString())
-            this.ui.setAttribute("style",`width: ${(timelineRows[timelineRowId].ui.clientWidth * this.video.duration/100).toString()}px; 
-                                          left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint+1)/100).toString()}px;
-                                          position: relative;`);
+            this.ui.setAttribute("style", `
+                width: ${(timelineRows[timelineRowId].ui.clientWidth * this.video.duration / 100).toString()}px; 
+                left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint + 1) / 100).toString()}px;
+                top: 0px;
+            `);
         }
     }
     
@@ -96,18 +97,14 @@ export default function Home() {
             for (let j=0; j<timelineRows[i].videos.length; j++) {
                 if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint>=timelineTime) {
                     if (!playing) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 1;
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 2;
                     }
                     if (playing && timelineRows[i].videos[j].video.paused) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 1;
-                        console.log(timelineRows[i].videos[j].video.currentTime);
-                        console.log("timeline Time "+timelineTime)
-                        console.log("timeline Time "+timelineRows[i].videos[j].startPoint)
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 2;
                         timelineRows[i].videos[j].video.addEventListener('seeked', function handleSeeked() {
                             timelineRows[i].videos[j].video.play();
                         });
                         
-                        console.log("playing");
                     }  
                     previewCTX.drawImage(
                         timelineRows[i].videos[j].video,
@@ -240,14 +237,11 @@ export default function Home() {
     }
 
     function endDragVideo(e: MouseEvent, tempVideo: HTMLVideoElement, i: number, originalVideo: HTMLVideoElement) {
-        console.log(i);
         var rect = timelineRows[i].ui.getBoundingClientRect(); 
         var x = 100*(e.clientX - rect.left)/rect.width; 
         var y = 100*(e.clientY - rect.top)/rect.height; 
-        timelineRows[i].addVideo(new timelineVideo(0, tempVideo.duration,x,x+tempVideo.duration,i,originalVideo));
+        timelineRows[i].addVideo(new timelineVideo(0, tempVideo.duration,x-1,x+tempVideo.duration-1,i,originalVideo));
 
-        console.log(timelineRows[0])
-        console.log("x: "+x+" y: "+ y)
         tempVideo.removeAttribute("src");
         tempVideo.remove();
     }
@@ -260,7 +254,6 @@ export default function Home() {
         timelineTime = parseFloat(e.target.value);
         
         playheadDiv.style.left = (-3+timelineRows[0].ui.clientWidth * (timelineTime+1)/100).toString()+"px";
-        console.log(timelineTime.toString())
     }
 
     function toggleVideoPlay() {
