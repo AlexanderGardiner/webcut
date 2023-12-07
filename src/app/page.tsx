@@ -1,4 +1,5 @@
 "use client"
+import { transform } from "next/dist/build/swc";
 import React, { useState, useEffect } from "react";
 import { FaPlay } from "react-icons/fa";
 
@@ -9,13 +10,13 @@ export default function Home() {
     let mediaPool: HTMLDivElement | null = null;
     let playheadDiv: HTMLDivElement;
     let fps = 60;
-    let timelineRows: timelineRow[] = [];
+    let timelineRows: TimelineRow[] = [];
     let timelineRowsElement: HTMLDivElement;
     let playing = false;
     let currentTime: number;
     let previousTime: number; 
     let timelineTime:number = 0;
-
+    let test = 0;
 
     useEffect(() => {    
         previewCanvas = document.getElementById("previewCanvas") as HTMLCanvasElement;
@@ -25,14 +26,15 @@ export default function Home() {
         timelineRowsElement = document.getElementById("timelineRows") as HTMLDivElement;
         playheadDiv = document.getElementById("playheadDiv") as HTMLDivElement;
         
-        timelineRows.push(new timelineRow(0));
+        timelineRows.push(new TimelineRow(test));
+        test+=1;
         playheadDiv.style.position = "relative";
         playheadDiv.style.width = "6px";
         
     }, []);
     
-    class timelineRow {
-        videos: timelineVideo[];
+    class TimelineRow {
+        videos: TimelineVideo[];
         ui: HTMLDivElement;
         id: number;
         constructor(id: number) {
@@ -46,14 +48,14 @@ export default function Home() {
             
 
         }
-        addVideo(timelineVideo: timelineVideo) {
+        addVideo(timelineVideo: TimelineVideo) {
             this.videos.push(timelineVideo);
             step();
         }
 
     }
 
-    class timelineVideo {
+    class TimelineVideo {
         inPoint: number;
         outPoint: number;
         startPoint: number;
@@ -62,7 +64,8 @@ export default function Home() {
         ui: HTMLDivElement;
         timelineRowId: number;
         previewImage: HTMLImageElement;
-        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement) {
+        transform: Transform;
+        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement, transform: Transform) {
             this.inPoint = inPoint;
             this.outPoint = outPoint;
             this.startPoint = startPoint;
@@ -86,10 +89,26 @@ export default function Home() {
             this.ui.appendChild(this.previewImage);
             timelineRows[timelineRowId].ui.appendChild(this.ui);
             this.ui.setAttribute("style", `
-                width: ${(timelineRows[timelineRowId].ui.clientWidth * (this.video.duration+2) / 100).toString()}px; 
-                left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint + 1) / 100).toString()}px;
+                width: ${(timelineRows[timelineRowId].ui.clientWidth * (this.video.duration) / 100).toString()}px; 
+                left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint) / 100).toString()}px;
                 top: 0px;
             `);
+            this.transform = transform;
+        }
+    }
+
+    class Transform {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        rotation: number;
+        constructor(x: number, y: number, width: number, height: number, rotation: number) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.rotation = rotation;
         }
     }
     
@@ -98,7 +117,7 @@ export default function Home() {
     
 
     function step() {
-        playheadDiv.style.left = (-3+timelineRows[0].ui.clientWidth * (timelineTime+1)/100).toString()+"px";
+        playheadDiv.style.left = (timelineRows[0].ui.clientWidth * (timelineTime)/100).toString()+"px";
         currentTime = performance.now();
         previewCTX.clearRect(0,0, previewCanvas.width, previewCanvas.height);
         if (playing) {
@@ -106,25 +125,35 @@ export default function Home() {
             playhead.value = timelineTime.toString();
         }
         
-        for (let i=0; i<timelineRows.length; i++) {
+        for (let i=timelineRows.length-1; i>=0; i--) {
             for (let j=0; j<timelineRows[i].videos.length; j++) {
-                if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint+2>=timelineTime) {
+                // Funky stuff happening here
+                if (timelineRows[i].videos[j].startPoint<=timelineTime+1 && timelineRows[i].videos[j].endPoint>=timelineTime) {
+                    let centerX = timelineRows[i].videos[j].transform.x + timelineRows[i].videos[j].transform.width/2;
+                    let centerY = timelineRows[i].videos[j].transform.y + timelineRows[i].videos[j].transform.height/2;
+                    
+                    previewCTX.translate(centerX, centerY);                    
+                    previewCTX.rotate(timelineRows[i].videos[j].transform.rotation);
+                    previewCTX.translate(-centerX, -centerY);                    
+
                     if (!playing) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 2;
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                        console.log(timelineRows[i].videos[j].video.currentTime)
                     }
                     if (playing && timelineRows[i].videos[j].video.paused) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 2;
-                        timelineRows[i].videos[j].video.addEventListener('seeked', function handleSeeked() {
-                            timelineRows[i].videos[j].video.play();
-                        });
+                        console.log("attempting to play")
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                        timelineRows[i].videos[j].video.play();
+                        console.log(timelineRows[i].videos[j].video.currentTime)
+
                         
                     }  
                     previewCTX.drawImage(
                         timelineRows[i].videos[j].video,
-                        0,
-                        0,
-                        previewCTX.canvas.width,
-                        previewCTX.canvas.height
+                        timelineRows[i].videos[j].transform.x,
+                        timelineRows[i].videos[j].transform.y,
+                        timelineRows[i].videos[j].transform.width,
+                        timelineRows[i].videos[j].transform.height
                         );
                 } else {
                     timelineRows[i].videos[j].video.pause();
@@ -132,6 +161,7 @@ export default function Home() {
                 if (!playing) {
                     timelineRows[i].videos[j].video.pause();
                 }
+                previewCTX.setTransform(1, 0, 0, 1, 0, 0);
             }
         }
         // previewCTX.drawImage(
@@ -162,7 +192,7 @@ export default function Home() {
         // previewCTX.restore();
 
         previousTime = currentTime;
-        setTimeout(step, 1000 / fps);
+        requestAnimationFrame(step);
     }
     
     function importVideo(file: File) {
@@ -202,7 +232,7 @@ export default function Home() {
         }
         tempVideoImage.src = previewImageCanvas.toDataURL('image/png');
         tempVideoImage.setAttribute("style", `
-                width: ${(timelineRows[0].ui.clientWidth * (video.duration+2) / 100).toString()}px; 
+                width: ${(timelineRows[0].ui.clientWidth * (video.duration) / 100).toString()}px; 
                 left: 0px;
             `);
         document.body.appendChild(tempVideoImage);
@@ -267,12 +297,12 @@ export default function Home() {
         var y = 100*(e.clientY - rect.top)/rect.height; 
         let canAddVideo = true;
         for (let j=0; j<timelineRows[i].videos.length; j++) {
-            if (timelineRows[i].videos[j].startPoint<x+originalVideo.duration-1 && timelineRows[i].videos[j].endPoint>x-1) {
+            if (timelineRows[i].videos[j].startPoint<x+originalVideo.duration && timelineRows[i].videos[j].endPoint>x) {
                 canAddVideo = false;
             }
         }
         if (canAddVideo) {
-            timelineRows[i].addVideo(new timelineVideo(0, originalVideo.duration,x-1,x+originalVideo.duration-1,i,originalVideo));
+            timelineRows[i].addVideo(new TimelineVideo(0, originalVideo.duration,x,x+originalVideo.duration,i,originalVideo, new Transform(0,0,previewCanvas.width,previewCanvas.height,Math.random()*2*Math.PI)));
 
         }
 
@@ -287,7 +317,7 @@ export default function Home() {
 
         timelineTime = parseFloat(e.target.value);
         
-        playheadDiv.style.left = (-3+timelineRows[0].ui.clientWidth * (timelineTime+1)/100).toString()+"px";
+        playheadDiv.style.left = (timelineRows[0].ui.clientWidth * (timelineTime)/100).toString()+"px";
     }
 
     function toggleVideoPlay() {
@@ -344,7 +374,7 @@ export default function Home() {
                     min="0"
                     max="100"
                     step="0.01"
-                    className="opacity-0 absolute w-[95vw] bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    className="absolute w-[100vw] bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                     ></input>
 
                     <div
