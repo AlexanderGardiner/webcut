@@ -86,7 +86,7 @@ export default function Home() {
             this.ui.appendChild(this.previewImage);
             timelineRows[timelineRowId].ui.appendChild(this.ui);
             this.ui.setAttribute("style", `
-                width: ${(timelineRows[timelineRowId].ui.clientWidth * this.video.duration / 100).toString()}px; 
+                width: ${(timelineRows[timelineRowId].ui.clientWidth * (this.video.duration+2) / 100).toString()}px; 
                 left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint + 1) / 100).toString()}px;
                 top: 0px;
             `);
@@ -108,7 +108,7 @@ export default function Home() {
         
         for (let i=0; i<timelineRows.length; i++) {
             for (let j=0; j<timelineRows[i].videos.length; j++) {
-                if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint>=timelineTime) {
+                if (timelineRows[i].videos[j].startPoint<=timelineTime && timelineRows[i].videos[j].endPoint+2>=timelineTime) {
                     if (!playing) {
                         timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint - 2;
                     }
@@ -202,7 +202,7 @@ export default function Home() {
         }
         tempVideoImage.src = previewImageCanvas.toDataURL('image/png');
         tempVideoImage.setAttribute("style", `
-                width: ${(timelineRows[0].ui.clientWidth * video.duration / 100).toString()}px; 
+                width: ${(timelineRows[0].ui.clientWidth * (video.duration+2) / 100).toString()}px; 
                 left: 0px;
             `);
         document.body.appendChild(tempVideoImage);
