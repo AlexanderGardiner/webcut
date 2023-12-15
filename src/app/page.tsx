@@ -57,7 +57,6 @@ export default function Home() {
 
     class TimelineVideo {
         inPoint: number;
-        outPoint: number;
         startPoint: number;
         endPoint: number;
         video: HTMLVideoElement;
@@ -66,9 +65,9 @@ export default function Home() {
         previewImage: HTMLImageElement;
         transform: Transform;
         leftSelect: HTMLButtonElement;
-        constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement, transform: Transform) {
+        rightSelect: HTMLButtonElement;
+        constructor(inPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement, transform: Transform) {
             this.inPoint = inPoint;
-            this.outPoint = outPoint;
             this.startPoint = startPoint;
             this.endPoint = endPoint;
             this.timelineRowId = timelineRowId
@@ -100,13 +99,22 @@ export default function Home() {
                 top: 0px;
             `);
             this.leftSelect.addEventListener('mousedown', this.startInPointAdjustment.bind(this));
+
+            this.rightSelect = document.createElement("button");
+            this.rightSelect.className = "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
+            this.rightSelect.setAttribute("style", `
+                top: 0px;
+                right: 0px;
+            `);
+            this.rightSelect.addEventListener('mousedown', this.startEndPointAdjustment.bind(this));
             this.ui.appendChild(this.leftSelect);
+            this.ui.appendChild(this.rightSelect);
             this.transform = transform;
         }
 
         updatePreviewImage() {
             this.ui.setAttribute("style", `
-                width: ${(timelineRows[this.timelineRowId].ui.clientWidth * (this.video.duration - this.inPoint) / 100).toString()}px; 
+                width: ${(timelineRows[this.timelineRowId].ui.clientWidth * (this.endPoint - this.startPoint) / 100).toString()}px; 
                 left: ${(timelineRows[this.timelineRowId].ui.clientWidth * (this.startPoint) / 100).toString()}px;
                 top: 0px;
             `);
@@ -128,15 +136,42 @@ export default function Home() {
             const handleMouseMove = (e: MouseEvent) => {
                 e.preventDefault();
                 console.log("MouseMove event triggered");
-                var rect = this.ui.getBoundingClientRect();
                 var timelineRowRect = timelineRows[this.timelineRowId].ui.getBoundingClientRect();
-                var x = (this.endPoint - this.startPoint) * (e.clientX - rect.left) / rect.width + this.inPoint;
-                if (x <= this.endPoint - this.startPoint && x>=0) {
-                    this.inPoint = x;
+                var x = 100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth;
+                if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
+                    this.inPoint += x - this.startPoint;
+                    this.startPoint = x;
                     
-                    this.endPoint = (100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth) + (this.outPoint - this.inPoint);
-                    this.startPoint = 100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth;
-                    console.log(x)
+                }
+                
+                
+                this.updatePreviewImage();
+            };
+        
+            document.body.addEventListener("mouseup", handleMouseUp);
+            document.body.addEventListener("mousemove", handleMouseMove);
+        }
+
+        startEndPointAdjustment(event: MouseEvent) {
+            event.preventDefault();
+            console.log("startOutPointAdjustment triggered");
+            console.log(event);
+        
+            const handleMouseUp = (e: MouseEvent) => {
+                e.preventDefault();
+                console.log("MouseUp event triggered");
+                console.log(this);
+                document.body.removeEventListener("mouseup", handleMouseUp);
+                document.body.removeEventListener("mousemove", handleMouseMove);
+            };
+        
+            const handleMouseMove = (e: MouseEvent) => {
+                e.preventDefault();
+                console.log("MouseMove event triggered");
+                var timelineRowRect = timelineRows[this.timelineRowId].ui.getBoundingClientRect();
+                var x = 100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth;
+                if (x - this.startPoint <= this.video.duration && x > this.startPoint) {
+                    this.endPoint = x;
                 }
                 
                 
@@ -358,7 +393,7 @@ export default function Home() {
             }
         }
         if (canAddVideo) {
-            timelineRows[i].addVideo(new TimelineVideo(0, originalVideo.duration,x,x+originalVideo.duration,i,originalVideo, new Transform(0,0,previewCanvas.width,previewCanvas.height,Math.random()*2*Math.PI)));
+            timelineRows[i].addVideo(new TimelineVideo(0,x,x+originalVideo.duration,i,originalVideo, new Transform(0,0,previewCanvas.width,previewCanvas.height,Math.random()*2*Math.PI)));
 
         }
 
