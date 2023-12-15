@@ -84,7 +84,7 @@ export default function Home() {
                 previewImageCTX.drawImage(video, 0, 0, previewImageCanvas.width, previewImageCanvas.height);
             }
             this.previewImage.src = previewImageCanvas.toDataURL('image/png');
-            this.previewImage.className = "absolute w-full overflow-hidden h-full min-w-max"
+            this.previewImage.className = "absolute w-full overflow-hidden h-full"
             this.previewImage.setAttribute("style","top:0px;");
             this.ui.appendChild(this.previewImage);
             timelineRows[timelineRowId].ui.appendChild(this.ui);
