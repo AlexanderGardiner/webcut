@@ -65,6 +65,7 @@ export default function Home() {
         timelineRowId: number;
         previewImage: HTMLImageElement;
         transform: Transform;
+        leftSelect: HTMLButtonElement;
         constructor(inPoint: number, outPoint: number, startPoint: number, endPoint: number, timelineRowId: number, video: HTMLVideoElement, transform: Transform) {
             this.inPoint = inPoint;
             this.outPoint = outPoint;
@@ -93,8 +94,60 @@ export default function Home() {
                 left: ${(timelineRows[timelineRowId].ui.clientWidth * (startPoint) / 100).toString()}px;
                 top: 0px;
             `);
+            this.leftSelect = document.createElement("button");
+            this.leftSelect.className = "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
+            this.leftSelect.setAttribute("style", `
+                top: 0px;
+            `);
+            this.leftSelect.addEventListener('mousedown', this.startInPointAdjustment.bind(this));
+            this.ui.appendChild(this.leftSelect);
             this.transform = transform;
         }
+
+        updatePreviewImage() {
+            this.ui.setAttribute("style", `
+                width: ${(timelineRows[this.timelineRowId].ui.clientWidth * (this.video.duration - this.inPoint) / 100).toString()}px; 
+                left: ${(timelineRows[this.timelineRowId].ui.clientWidth * (this.startPoint) / 100).toString()}px;
+                top: 0px;
+            `);
+        }
+
+        startInPointAdjustment(event: MouseEvent) {
+            event.preventDefault();
+            console.log("startInPointAdjustment triggered");
+            console.log(event);
+        
+            const handleMouseUp = (e: MouseEvent) => {
+                e.preventDefault();
+                console.log("MouseUp event triggered");
+                console.log(this);
+                document.body.removeEventListener("mouseup", handleMouseUp);
+                document.body.removeEventListener("mousemove", handleMouseMove);
+            };
+        
+            const handleMouseMove = (e: MouseEvent) => {
+                e.preventDefault();
+                console.log("MouseMove event triggered");
+                var rect = this.ui.getBoundingClientRect();
+                var timelineRowRect = timelineRows[this.timelineRowId].ui.getBoundingClientRect();
+                var x = (this.endPoint - this.startPoint) * (e.clientX - rect.left) / rect.width + this.inPoint;
+                if (x <= this.endPoint - this.startPoint && x>=0) {
+                    this.inPoint = x;
+                    
+                    this.endPoint = (100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth) + (this.outPoint - this.inPoint);
+                    this.startPoint = 100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth;
+                    console.log(x)
+                }
+                
+                
+                this.updatePreviewImage();
+            };
+        
+            document.body.addEventListener("mouseup", handleMouseUp);
+            document.body.addEventListener("mousemove", handleMouseMove);
+        }
+
+        
     }
 
     class Transform {
@@ -136,15 +189,14 @@ export default function Home() {
                     previewCTX.rotate(timelineRows[i].videos[j].transform.rotation);
                     previewCTX.translate(-centerX, -centerY);                    
 
-                    if (!playing) {
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
-                        console.log(timelineRows[i].videos[j].video.currentTime)
+                    if (!playing && timelineRows[i].videos[j].video.currentTime!=timelineTime - timelineRows[i].videos[j].startPoint + timelineRows[i].videos[j].inPoint) {
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint + timelineRows[i].videos[j].inPoint;
+                        timelineRows[i].videos[j].video.play();
                     }
                     if (playing && timelineRows[i].videos[j].video.paused) {
                         console.log("attempting to play")
-                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint;
+                        timelineRows[i].videos[j].video.currentTime = timelineTime - timelineRows[i].videos[j].startPoint + timelineRows[i].videos[j].inPoint;
                         timelineRows[i].videos[j].video.play();
-                        console.log(timelineRows[i].videos[j].video.currentTime)
 
                         
                     }  
@@ -156,9 +208,6 @@ export default function Home() {
                         timelineRows[i].videos[j].transform.height
                         );
                 } else {
-                    timelineRows[i].videos[j].video.pause();
-                }
-                if (!playing) {
                     timelineRows[i].videos[j].video.pause();
                 }
                 previewCTX.setTransform(1, 0, 0, 1, 0, 0);
@@ -192,8 +241,12 @@ export default function Home() {
         // previewCTX.restore();
 
         previousTime = currentTime;
-        requestAnimationFrame(step);
+        setTimeout(() => {
+            step();
+        }, 30);//requestAnimationFrame(step);
     }
+
+    
     
     function importVideo(file: File) {
         
@@ -239,11 +292,13 @@ export default function Home() {
         
         tempVideoImage.className = "h-10 absolute pointer-events-none";
         const handleMouseMove = (e: MouseEvent) => {
+            console.log("handle mouse move")
             e.preventDefault();
             updateDraggedVideoPosition(e, tempVideoImage);
           };
 
         const handleMouseUp = (e: MouseEvent) => {
+            console.log("handle mouse up")
             e.preventDefault();
             document.removeEventListener("mousemove", handleMouseMove);
             document.removeEventListener("mouseup", handleMouseUp);
@@ -255,6 +310,7 @@ export default function Home() {
           };
       
         const handleMouseUpOnTimeline = (e: MouseEvent) => {
+            console.log("handle mouse up on timeline")
             e.preventDefault();
             e.stopPropagation();
             let target = e.target as HTMLDivElement;
