@@ -148,16 +148,22 @@ export class MediaVideo {
       }
     }
     if (canAddVideo) {
-      this.timelineRows[i].addVideo(
-        new TimelineVideo(
-          0,
-          x,
-          x + originalVideo.duration,
-          originalVideo,
-          new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
-          this.timelineRows[i]
-        )
-      );
+      let video = document.createElement("video");
+      video.src = originalVideo.src;
+      video.play();
+      video.addEventListener("loadeddata", () => {
+        this.timelineRows[i].addVideo(
+          new TimelineVideo(
+            0,
+            x,
+            x + video.duration,
+            video,
+            new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
+            this.timelineRows[i]
+          )
+        );
+        video.pause();
+      });
     }
 
     tempVideo.removeAttribute("src");
