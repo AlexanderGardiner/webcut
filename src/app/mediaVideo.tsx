@@ -6,10 +6,12 @@ export class MediaVideo {
   video: HTMLVideoElement;
   previewImage: HTMLImageElement;
   timelineRows: TimelineRow[];
+  timelineFPS: number;
   constructor(
     video: HTMLVideoElement,
     parent: HTMLElement,
-    timelineRows: TimelineRow[]
+    timelineRows: TimelineRow[],
+    timelineFPS: number
   ) {
     console.log(video);
     this.video = video;
@@ -17,6 +19,7 @@ export class MediaVideo {
     this.timelineRows = timelineRows;
     let previewImageCanvas = document.createElement("canvas");
     let previewImageCTX = previewImageCanvas.getContext("2d");
+    this.timelineFPS = timelineFPS;
     this.video.addEventListener("loadeddata", () => {
       previewImageCanvas.width = this.video.width;
       previewImageCanvas.height = this.video.height;
@@ -155,11 +158,12 @@ export class MediaVideo {
         this.timelineRows[i].addVideo(
           new TimelineVideo(
             0,
-            x,
-            x + video.duration,
+            Math.floor(x * 60) / 60,
+            Math.floor(x * 60) / 60 + Math.floor(video.duration * 60) / 60,
             video,
             new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
-            this.timelineRows[i]
+            this.timelineRows[i],
+            this.timelineFPS
           )
         );
         video.pause();

@@ -12,19 +12,22 @@ export class TimelineVideo {
   transform: Transform;
   leftSelect: HTMLButtonElement;
   rightSelect: HTMLButtonElement;
+  timelineFPS: number;
   constructor(
     inPoint: number,
     startPoint: number,
     endPoint: number,
     video: HTMLVideoElement,
     transform: Transform,
-    timelineRow: TimelineRow
+    timelineRow: TimelineRow,
+    timelineFPS: number
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.video = video;
     this.timelineRow = timelineRow;
+    this.timelineFPS = timelineFPS;
     this.ui = document.createElement("div");
 
     this.ui.className =
@@ -144,8 +147,11 @@ export class TimelineVideo {
         (100 * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
-        this.startPoint = x - initalMousePosition;
-        this.endPoint = this.startPoint + width;
+        this.startPoint =
+          Math.floor((x - initalMousePosition) * this.timelineFPS) /
+          this.timelineFPS;
+        this.endPoint =
+          ((this.startPoint + width) * this.timelineFPS) / this.timelineFPS;
       }
 
       this.updatePreviewImage();
@@ -175,8 +181,10 @@ export class TimelineVideo {
         (100 * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
-        this.inPoint += x - this.startPoint;
-        this.startPoint = x;
+        this.inPoint +=
+          Math.floor((x - this.startPoint) * this.timelineFPS) /
+          this.timelineFPS;
+        this.startPoint = Math.floor(x * this.timelineFPS) / this.timelineFPS;
       }
 
       this.updatePreviewImage();
@@ -206,7 +214,7 @@ export class TimelineVideo {
         (100 * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x - this.startPoint <= this.video.duration && x > this.startPoint) {
-        this.endPoint = x;
+        this.endPoint = Math.floor(x * this.timelineFPS) / this.timelineFPS;
       }
 
       this.updatePreviewImage();

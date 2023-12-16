@@ -36,13 +36,14 @@ export default function Home() {
 
     if (playing) {
       timelineTime += (currentTime - previousTime) / 1000;
+      timelineTime = Math.round(timelineTime * fps) / fps;
       playhead.current!.value = timelineTime.toString();
     }
 
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (
-          timelineRows[i].videos[j].startPoint <= timelineTime + 1 &&
+          timelineRows[i].videos[j].startPoint <= timelineTime &&
           timelineRows[i].videos[j].endPoint >= timelineTime
         ) {
           let centerX =
@@ -56,18 +57,11 @@ export default function Home() {
           previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
           previewCTX!.translate(-centerX, -centerY);
 
-          if (
-            !playing &&
-            timelineRows[i].videos[j].video.currentTime !=
-              timelineTime -
-                timelineRows[i].videos[j].startPoint +
-                timelineRows[i].videos[j].inPoint
-          ) {
+          if (!playing) {
             timelineRows[i].videos[j].video.currentTime =
               timelineTime -
               timelineRows[i].videos[j].startPoint +
               timelineRows[i].videos[j].inPoint;
-            timelineRows[i].videos[j].video.play();
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             console.log("attempting to play");
@@ -85,6 +79,7 @@ export default function Home() {
             timelineRows[i].videos[j].transform.height
           );
         } else {
+          timelineRows[i].videos[j].video.currentTime = 0;
           timelineRows[i].videos[j].video.pause();
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
@@ -104,7 +99,7 @@ export default function Home() {
     video.width = 1600;
     video.height = 900;
 
-    new MediaVideo(video, mediaPool.current!, timelineRows);
+    new MediaVideo(video, mediaPool.current!, timelineRows, fps);
   }
 
   function updatePlayhead(e: React.ChangeEvent<HTMLInputElement>) {
@@ -183,7 +178,7 @@ export default function Home() {
             min="0"
             max="100"
             step="0.01"
-            className="absolute w-[100vw] bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+            className="absolute w-[100vw] bg-gray-200 floored-lg appearance-none cursor-pointer dark:bg-gray-700"
             ref={playhead}
           ></input>
 
