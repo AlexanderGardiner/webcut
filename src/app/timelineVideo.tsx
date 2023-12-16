@@ -55,16 +55,17 @@ export class TimelineVideo {
     this.previewImage.setAttribute("style", "top:0px;");
     this.ui.appendChild(this.previewImage);
     timelineRow.ui.appendChild(this.ui);
+
     this.ui.setAttribute(
       "style",
       `
             width: ${(
-              (timelineRow.ui.clientWidth * this.video.duration) /
-              timelineDuration
+              (timelineRow.ui.clientWidth * (this.endPoint - this.startPoint)) /
+              (timelineDuration * timelineFPS)
             ).toString()}px; 
             left: ${(
               (timelineRow.ui.clientWidth * startPoint) /
-              timelineDuration
+              (timelineDuration * timelineFPS)
             ).toString()}px;
             top: 0px;
         `
@@ -113,11 +114,11 @@ export class TimelineVideo {
             width: ${(
               (this.timelineRow.ui.clientWidth *
                 (this.endPoint - this.startPoint)) /
-              this.timelineDuration
+              (this.timelineDuration * this.timelineFPS)
             ).toString()}px; 
             left: ${(
               (this.timelineRow.ui.clientWidth * this.startPoint) /
-              this.timelineDuration
+              (this.timelineDuration * this.timelineFPS)
             ).toString()}px;
             top: 0px;
         `
@@ -126,36 +127,29 @@ export class TimelineVideo {
 
   dragVideo(event: MouseEvent) {
     event.preventDefault();
-    console.log("dragVideo triggered");
-    console.log(event);
     var videoRect = this.ui.getBoundingClientRect();
     let initalMousePosition =
       ((this.endPoint - this.startPoint) * (event.clientX - videoRect.left)) /
       videoRect.width;
     let width = this.endPoint - this.startPoint;
-
+    console.log(this.startPoint);
     const handleMouseUp = (e: MouseEvent) => {
-      console.log("MouseUp event triggered");
-      console.log(this);
       document.body.removeEventListener("mouseup", handleMouseUp);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      console.log("MouseMove event triggered");
 
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration *
+          this.timelineFPS *
+          (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
-      if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
-        this.startPoint =
-          Math.floor((x - initalMousePosition) * this.timelineFPS) /
-          this.timelineFPS;
-        this.endPoint =
-          ((this.startPoint + width) * this.timelineFPS) / this.timelineFPS;
-      }
+      this.startPoint = Math.floor(x - initalMousePosition);
+      console.log(this.startPoint);
+      this.endPoint = this.startPoint + width;
 
       this.updatePreviewImage();
     };
@@ -166,28 +160,27 @@ export class TimelineVideo {
 
   startInPointAdjustment(event: MouseEvent) {
     event.preventDefault();
-    console.log("startInPointAdjustment triggered");
-    console.log(event);
 
     const handleMouseUp = (e: MouseEvent) => {
-      console.log("MouseUp event triggered");
-      console.log(this);
       document.body.removeEventListener("mouseup", handleMouseUp);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      console.log("MouseMove event triggered");
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration *
+          this.timelineFPS *
+          (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
-      if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
-        this.inPoint +=
-          Math.floor((x - this.startPoint) * this.timelineFPS) /
-          this.timelineFPS;
-        this.startPoint = Math.floor(x * this.timelineFPS) / this.timelineFPS;
+      if (
+        x < this.endPoint &&
+        x >= this.endPoint - this.video.duration * this.timelineFPS
+      ) {
+        this.inPoint += Math.floor(x - this.startPoint);
+        this.startPoint = Math.floor(x);
+        console.log(this.startPoint);
       }
 
       this.updatePreviewImage();
@@ -199,25 +192,25 @@ export class TimelineVideo {
 
   startEndPointAdjustment(event: MouseEvent) {
     event.preventDefault();
-    console.log("startOutPointAdjustment triggered");
-    console.log(event);
 
     const handleMouseUp = (e: MouseEvent) => {
-      console.log("MouseUp event triggered");
-      console.log(this);
       document.body.removeEventListener("mouseup", handleMouseUp);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      console.log("MouseMove event triggered");
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration *
+          this.timelineFPS *
+          (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
-      if (x - this.startPoint <= this.video.duration && x > this.startPoint) {
-        this.endPoint = Math.floor(x * this.timelineFPS) / this.timelineFPS;
+      if (
+        x - this.startPoint <= this.video.duration * this.timelineFPS &&
+        x > this.startPoint
+      ) {
+        this.endPoint = Math.floor(x);
       }
 
       this.updatePreviewImage();

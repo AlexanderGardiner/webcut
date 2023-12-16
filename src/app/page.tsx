@@ -27,7 +27,8 @@ export default function Home() {
     currentTime = performance.now();
     playheadDiv.current!.style.left =
       (
-        (timelineRows[0].ui.clientWidth * timelineTime) / timelineDuration -
+        (timelineRows[0].ui.clientWidth * timelineTime) /
+          (timelineDuration * fps) -
         3
       ).toString() + "px";
     let canPlay = true;
@@ -38,6 +39,7 @@ export default function Home() {
       previewCanvas.current!.height
     );
 
+    //console.log(timelineTime / fps);
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (
@@ -54,35 +56,32 @@ export default function Home() {
           previewCTX!.translate(centerX, centerY);
           previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
           previewCTX!.translate(-centerX, -centerY);
-          console.log(timelineRows[i].videos[j].video.currentTime);
+
           if (
             !playing &&
             timelineRows[i].videos[j].video.currentTime !=
               Math.floor(
-                (timelineTime -
+                timelineTime -
                   timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint) *
-                  fps
+                  timelineRows[i].videos[j].inPoint
               ) /
                 fps
           ) {
             timelineRows[i].videos[j].video.currentTime =
               Math.floor(
-                (timelineTime -
+                timelineTime -
                   timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint) *
-                  fps
+                  timelineRows[i].videos[j].inPoint
               ) / fps;
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
-            console.log("attempting to play");
             timelineRows[i].videos[j].video.currentTime =
               Math.floor(
-                (timelineTime -
+                timelineTime -
                   timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint) *
-                  fps
+                  timelineRows[i].videos[j].inPoint
               ) / fps;
+
             timelineRows[i].videos[j].video.play();
           }
           previewCTX!.drawImage(
@@ -104,7 +103,7 @@ export default function Home() {
     }
 
     if (playing && canPlay) {
-      timelineTime += 1 / fps;
+      timelineTime += 1;
     }
 
     previousTime = currentTime;
@@ -132,6 +131,7 @@ export default function Home() {
 
   function setPlayhead(value: number) {
     timelineTime = value;
+
     movePlayhead();
   }
 
@@ -140,12 +140,12 @@ export default function Home() {
     var rect = timelineRows[0].ui.getBoundingClientRect();
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      console.log("handle mouse move");
-      timelineTime = (timelineDuration * (e.clientX - rect.left)) / rect.width;
+      timelineTime = Math.round(
+        (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
+      );
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      console.log("handle mouse up");
       e.preventDefault();
       document.body.removeEventListener("mousemove", handleMouseMove);
       document.body.removeEventListener("mouseup", handleMouseUp);
@@ -164,15 +164,19 @@ export default function Home() {
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
       previewCTX = previewCanvas.current!.getContext("2d")!;
-      playheadDiv.current!.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        movePlayhead();
-      });
+      // playheadDiv.current!.addEventListener("mousedown", (e) => {
+      //   e.preventDefault();
+      //   movePlayhead();
+      // });
 
       playheadParent.current!.addEventListener("mousedown", (e) => {
         e.preventDefault();
         var rect = timelineRows[0].ui.getBoundingClientRect();
-        setPlayhead((timelineDuration * (e.clientX - rect.left)) / rect.width);
+        setPlayhead(
+          Math.round(
+            (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
+          )
+        );
       });
       for (let i = 0; i < 3; i++) {
         timelineRows.push(new TimelineRow(i, timelineRowsElement.current!));
@@ -222,11 +226,11 @@ export default function Home() {
           <h1>Properties</h1>
         </div>
       </div>
-      <div
-        className="flex flex-col items-center justify-center w-full select-none"
-        ref={playheadParent}
-      >
-        <div className="relative flex flex-col w-[95vw] bg-white h-5 my-5">
+      <div className="flex flex-col items-center justify-center w-full select-none">
+        <div
+          className="relative flex flex-col w-[95vw] bg-white h-5 my-5"
+          ref={playheadParent}
+        >
           <div
             id="playheadDiv"
             ref={playheadDiv}

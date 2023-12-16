@@ -15,7 +15,6 @@ export class MediaVideo {
     timelineFPS: number,
     timelineDuration: number
   ) {
-    console.log(video);
     this.video = video;
     this.previewImage = document.createElement("img");
     this.timelineRows = timelineRows;
@@ -28,17 +27,13 @@ export class MediaVideo {
       previewImageCanvas.height = this.video.height;
 
       if (previewImageCTX) {
-        console.log(
-          previewImageCTX.drawImage(
-            this.video,
-            0,
-            0,
-            previewImageCanvas.width,
-            previewImageCanvas.height
-          )
+        previewImageCTX.drawImage(
+          this.video,
+          0,
+          0,
+          previewImageCanvas.width,
+          previewImageCanvas.height
         );
-      } else {
-        console.log("ahhh");
       }
       this.previewImage.src = previewImageCanvas.toDataURL("image/png");
       parent.appendChild(this.previewImage);
@@ -74,13 +69,11 @@ export class MediaVideo {
 
     tempVideoImage.className = "h-10 absolute pointer-events-none";
     const handleMouseMove = (e: MouseEvent) => {
-      console.log("handle mouse move");
       e.preventDefault();
       this.updateDraggedVideoPosition(e, tempVideoImage);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      console.log("handle mouse up");
       e.preventDefault();
       document.body.removeEventListener("mousemove", handleMouseMove);
       document.body.removeEventListener("mouseup", handleMouseUp);
@@ -95,8 +88,6 @@ export class MediaVideo {
     };
 
     const handleMouseUpOnTimeline = (e: MouseEvent) => {
-      console.log("mouseup on timeline");
-      console.log("handle mouse up on timeline");
       e.preventDefault();
       let target = e.target as HTMLDivElement;
       if (target.getAttribute("timelineRowId") != null) {
@@ -156,12 +147,16 @@ export class MediaVideo {
       let video = document.createElement("video");
       video.src = originalVideo.src;
       video.play();
+
       video.addEventListener("loadeddata", () => {
+        let startPoint = Math.round(x * this.timelineFPS);
+        let endPoint =
+          startPoint + Math.round(video.duration * this.timelineFPS);
         this.timelineRows[i].addVideo(
           new TimelineVideo(
             0,
-            Math.floor(x * 60) / 60,
-            Math.floor(x * 60) / 60 + Math.floor(video.duration * 60) / 60,
+            startPoint,
+            endPoint,
             video,
             new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
             this.timelineRows[i],
