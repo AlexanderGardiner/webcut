@@ -66,6 +66,7 @@ export default function Home() {
                 ) / fps
               ).toFixed(3)
             );
+            timelineRows[i].videos[j].video.pause();
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             timelineRows[i].videos[j].video.currentTime = parseFloat(
@@ -92,6 +93,7 @@ export default function Home() {
           }
         } else {
           timelineRows[i].videos[j].video.currentTime = 0;
+          timelineRows[i].videos[j].video.pause();
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
