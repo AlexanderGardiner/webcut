@@ -132,7 +132,6 @@ export class TimelineVideo {
       ((this.endPoint - this.startPoint) * (event.clientX - videoRect.left)) /
       videoRect.width;
     let width = this.endPoint - this.startPoint;
-    console.log(this.startPoint);
     const handleMouseUp = (e: MouseEvent) => {
       document.body.removeEventListener("mouseup", handleMouseUp);
       document.body.removeEventListener("mousemove", handleMouseMove);
@@ -148,7 +147,6 @@ export class TimelineVideo {
           (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       this.startPoint = Math.floor(x - initalMousePosition);
-      console.log(this.startPoint);
       this.endPoint = this.startPoint + width;
 
       this.updatePreviewImage();
@@ -180,7 +178,6 @@ export class TimelineVideo {
       ) {
         this.inPoint += Math.floor(x - this.startPoint);
         this.startPoint = Math.floor(x);
-        console.log(this.startPoint);
       }
 
       this.updatePreviewImage();

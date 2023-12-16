@@ -39,7 +39,6 @@ export default function Home() {
       previewCanvas.current!.height
     );
 
-    //console.log(timelineTime / fps);
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (
@@ -57,30 +56,27 @@ export default function Home() {
           previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
           previewCTX!.translate(-centerX, -centerY);
 
-          if (
-            !playing &&
-            timelineRows[i].videos[j].video.currentTime !=
-              Math.floor(
-                timelineTime -
-                  timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint
-              ) /
-                fps
-          ) {
-            timelineRows[i].videos[j].video.currentTime =
-              Math.floor(
-                timelineTime -
-                  timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint
-              ) / fps;
+          if (!playing) {
+            timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (
+                Math.floor(
+                  timelineTime -
+                    timelineRows[i].videos[j].startPoint +
+                    timelineRows[i].videos[j].inPoint
+                ) / fps
+              ).toFixed(3)
+            );
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
-            timelineRows[i].videos[j].video.currentTime =
-              Math.floor(
-                timelineTime -
-                  timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint
-              ) / fps;
+            timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (
+                Math.floor(
+                  timelineTime -
+                    timelineRows[i].videos[j].startPoint +
+                    timelineRows[i].videos[j].inPoint
+                ) / fps
+              ).toFixed(3)
+            );
 
             timelineRows[i].videos[j].video.play();
           }
@@ -96,7 +92,6 @@ export default function Home() {
           }
         } else {
           timelineRows[i].videos[j].video.currentTime = 0;
-          timelineRows[i].videos[j].video.pause();
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
