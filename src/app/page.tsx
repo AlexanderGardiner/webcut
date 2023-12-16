@@ -84,7 +84,7 @@ export default function Home() {
                 previewImageCTX.drawImage(video, 0, 0, previewImageCanvas.width, previewImageCanvas.height);
             }
             this.previewImage.src = previewImageCanvas.toDataURL('image/png');
-            this.previewImage.className = "absolute w-full overflow-hidden h-full"
+            this.previewImage.className = "absolute w-full overflow-hidden h-full pointer-events-auto"
             this.previewImage.setAttribute("style","top:0px;");
             this.ui.appendChild(this.previewImage);
             timelineRows[timelineRowId].ui.appendChild(this.ui);
@@ -97,6 +97,7 @@ export default function Home() {
             this.leftSelect.className = "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
             this.leftSelect.setAttribute("style", `
                 top: 0px;
+                z-index: 3;
             `);
             this.leftSelect.addEventListener('mousedown', this.startInPointAdjustment.bind(this));
 
@@ -105,8 +106,11 @@ export default function Home() {
             this.rightSelect.setAttribute("style", `
                 top: 0px;
                 right: 0px;
+                z-index: 3;
             `);
             this.rightSelect.addEventListener('mousedown', this.startEndPointAdjustment.bind(this));
+
+            this.previewImage.addEventListener('mousedown', this.dragVideo.bind(this));
             this.ui.appendChild(this.leftSelect);
             this.ui.appendChild(this.rightSelect);
             this.transform = transform;
@@ -120,13 +124,48 @@ export default function Home() {
             `);
         }
 
+        dragVideo(event: MouseEvent) {
+            event.preventDefault();
+            console.log("dragVideo triggered");
+            console.log(event);
+            var videoRect = this.ui.getBoundingClientRect();
+            let initalMousePosition = (this.endPoint - this.startPoint) * (event.clientX - videoRect.left) / videoRect.width;
+            let width = (this.endPoint - this.startPoint);
+        
+            const handleMouseUp = (e: MouseEvent) => {
+                console.log("MouseUp event triggered");
+                console.log(this);
+                document.body.removeEventListener("mouseup", handleMouseUp);
+                document.body.removeEventListener("mousemove", handleMouseMove);
+            };
+        
+            const handleMouseMove = (e: MouseEvent) => {
+                e.preventDefault();
+                console.log("MouseMove event triggered");
+                
+                
+                var timelineRowRect = timelineRows[this.timelineRowId].ui.getBoundingClientRect();
+                var x = 100 * (e.clientX - timelineRowRect.left) / timelineRows[this.timelineRowId].ui.clientWidth;
+                if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
+                    this.startPoint = x - initalMousePosition;
+                    this.endPoint = this.startPoint + width;
+                    
+                }
+                
+                
+                this.updatePreviewImage();
+            };
+        
+            document.body.addEventListener("mouseup", handleMouseUp, true);
+            document.body.addEventListener("mousemove", handleMouseMove);
+        }
+
         startInPointAdjustment(event: MouseEvent) {
             event.preventDefault();
             console.log("startInPointAdjustment triggered");
             console.log(event);
         
             const handleMouseUp = (e: MouseEvent) => {
-                e.preventDefault();
                 console.log("MouseUp event triggered");
                 console.log(this);
                 document.body.removeEventListener("mouseup", handleMouseUp);
@@ -148,7 +187,7 @@ export default function Home() {
                 this.updatePreviewImage();
             };
         
-            document.body.addEventListener("mouseup", handleMouseUp);
+            document.body.addEventListener("mouseup", handleMouseUp, true);
             document.body.addEventListener("mousemove", handleMouseMove);
         }
 
@@ -158,7 +197,6 @@ export default function Home() {
             console.log(event);
         
             const handleMouseUp = (e: MouseEvent) => {
-                e.preventDefault();
                 console.log("MouseUp event triggered");
                 console.log(this);
                 document.body.removeEventListener("mouseup", handleMouseUp);
@@ -178,7 +216,7 @@ export default function Home() {
                 this.updatePreviewImage();
             };
         
-            document.body.addEventListener("mouseup", handleMouseUp);
+            document.body.addEventListener("mouseup", handleMouseUp, true);
             document.body.addEventListener("mousemove", handleMouseMove);
         }
 
@@ -335,8 +373,8 @@ export default function Home() {
         const handleMouseUp = (e: MouseEvent) => {
             console.log("handle mouse up")
             e.preventDefault();
-            document.removeEventListener("mousemove", handleMouseMove);
-            document.removeEventListener("mouseup", handleMouseUp);
+            document.body.removeEventListener("mousemove", handleMouseMove);
+            document.body.removeEventListener("mouseup", handleMouseUp);
             tempVideoImage.removeAttribute("src");
             tempVideoImage.remove();
             for (let i=0; i<timelineRows.length; i++) {
@@ -345,22 +383,24 @@ export default function Home() {
           };
       
         const handleMouseUpOnTimeline = (e: MouseEvent) => {
+            console.log("mouseup on timeline")
             console.log("handle mouse up on timeline")
             e.preventDefault();
-            e.stopPropagation();
             let target = e.target as HTMLDivElement;
             if (target.getAttribute("timelineRowId")!=null) {
                 endDragVideo(e, tempVideoImage, parseInt(target.getAttribute("timelineRowId")!), video);
+            } else {
+                handleMouseUp(e);
             }
             
             for (let i=0; i<timelineRows.length; i++) {
                 timelineRows[i].ui.removeEventListener('mouseup', handleMouseUpOnTimeline);
             }
-            document.removeEventListener("mousemove", handleMouseMove);
-            document.removeEventListener("mouseup", handleMouseUp);
+            document.body.removeEventListener("mousemove", handleMouseMove);
+            document.body.removeEventListener("mouseup", handleMouseUp);
         }
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
+        document.body.addEventListener("mousemove", handleMouseMove);
+        document.body.addEventListener("mouseup", handleMouseUp);
         for (let i=0; i<timelineRows.length; i++) {
             timelineRows[i].ui.addEventListener('mouseup', handleMouseUpOnTimeline); 
 
