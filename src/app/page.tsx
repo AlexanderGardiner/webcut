@@ -9,8 +9,8 @@ import Script from "next/script";
 export default function Home() {
   let previewCanvas = useRef<HTMLCanvasElement>(null);
   let previewCTX: CanvasRenderingContext2D;
-  let playhead = useRef<HTMLInputElement>(null);
   let playheadDiv = useRef<HTMLDivElement>(null);
+  let playheadParent = useRef<HTMLDivElement>(null);
   let mediaPool = useRef<HTMLDivElement>(null);
   let timelineRowsElement = useRef<HTMLDivElement>(null);
   let fps = 60;
@@ -21,24 +21,22 @@ export default function Home() {
   let previousTime: number;
   let timelineTime: number = 0;
   let initalized = false;
+  let timelineDuration = 50;
 
   function step() {
     currentTime = performance.now();
     playheadDiv.current!.style.left =
-      ((timelineRows[0].ui.clientWidth * timelineTime) / 100).toString() + "px";
-
+      (
+        (timelineRows[0].ui.clientWidth * timelineTime) / timelineDuration -
+        3
+      ).toString() + "px";
+    let canPlay = true;
     previewCTX!.clearRect(
       0,
       0,
       previewCanvas.current!.width,
       previewCanvas.current!.height
     );
-
-    if (playing) {
-      timelineTime += (currentTime - previousTime) / 1000;
-      timelineTime = Math.round(timelineTime * fps) / fps;
-      playhead.current!.value = timelineTime.toString();
-    }
 
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -56,19 +54,35 @@ export default function Home() {
           previewCTX!.translate(centerX, centerY);
           previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
           previewCTX!.translate(-centerX, -centerY);
-
-          if (!playing) {
+          console.log(timelineRows[i].videos[j].video.currentTime);
+          if (
+            !playing &&
+            timelineRows[i].videos[j].video.currentTime !=
+              Math.floor(
+                (timelineTime -
+                  timelineRows[i].videos[j].startPoint +
+                  timelineRows[i].videos[j].inPoint) *
+                  fps
+              ) /
+                fps
+          ) {
             timelineRows[i].videos[j].video.currentTime =
-              timelineTime -
-              timelineRows[i].videos[j].startPoint +
-              timelineRows[i].videos[j].inPoint;
+              Math.floor(
+                (timelineTime -
+                  timelineRows[i].videos[j].startPoint +
+                  timelineRows[i].videos[j].inPoint) *
+                  fps
+              ) / fps;
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             console.log("attempting to play");
             timelineRows[i].videos[j].video.currentTime =
-              timelineTime -
-              timelineRows[i].videos[j].startPoint +
-              timelineRows[i].videos[j].inPoint;
+              Math.floor(
+                (timelineTime -
+                  timelineRows[i].videos[j].startPoint +
+                  timelineRows[i].videos[j].inPoint) *
+                  fps
+              ) / fps;
             timelineRows[i].videos[j].video.play();
           }
           previewCTX!.drawImage(
@@ -78,6 +92,9 @@ export default function Home() {
             timelineRows[i].videos[j].transform.width,
             timelineRows[i].videos[j].transform.height
           );
+          if (timelineRows[i].videos[j].video.paused == true) {
+            canPlay = false;
+          }
         } else {
           timelineRows[i].videos[j].video.currentTime = 0;
           timelineRows[i].videos[j].video.pause();
@@ -85,6 +102,11 @@ export default function Home() {
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
     }
+
+    if (playing && canPlay) {
+      timelineTime += 1 / fps;
+    }
+
     previousTime = currentTime;
     setTimeout(() => {
       step();
@@ -99,16 +121,38 @@ export default function Home() {
     video.width = 1600;
     video.height = 900;
 
-    new MediaVideo(video, mediaPool.current!, timelineRows, fps);
+    new MediaVideo(
+      video,
+      mediaPool.current!,
+      timelineRows,
+      fps,
+      timelineDuration
+    );
   }
 
-  function updatePlayhead(e: React.ChangeEvent<HTMLInputElement>) {
+  function setPlayhead(value: number) {
+    timelineTime = value;
+    movePlayhead();
+  }
+
+  function movePlayhead() {
     playing = false;
+    var rect = timelineRows[0].ui.getBoundingClientRect();
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      console.log("handle mouse move");
+      timelineTime = (timelineDuration * (e.clientX - rect.left)) / rect.width;
+    };
 
-    timelineTime = parseFloat(e.target.value);
+    const handleMouseUp = (e: MouseEvent) => {
+      console.log("handle mouse up");
+      e.preventDefault();
+      document.body.removeEventListener("mousemove", handleMouseMove);
+      document.body.removeEventListener("mouseup", handleMouseUp);
+    };
 
-    playheadDiv.current!.style.left =
-      ((timelineRows[0].ui.clientWidth * timelineTime) / 100).toString() + "px";
+    document.body.addEventListener("mouseup", handleMouseUp, true);
+    document.body.addEventListener("mousemove", handleMouseMove);
   }
 
   function toggleVideoPlay() {
@@ -120,6 +164,16 @@ export default function Home() {
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
       previewCTX = previewCanvas.current!.getContext("2d")!;
+      playheadDiv.current!.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        movePlayhead();
+      });
+
+      playheadParent.current!.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        var rect = timelineRows[0].ui.getBoundingClientRect();
+        setPlayhead((timelineDuration * (e.clientX - rect.left)) / rect.width);
+      });
       for (let i = 0; i < 3; i++) {
         timelineRows.push(new TimelineRow(i, timelineRowsElement.current!));
       }
@@ -168,20 +222,11 @@ export default function Home() {
           <h1>Properties</h1>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center w-full select-none">
+      <div
+        className="flex flex-col items-center justify-center w-full select-none"
+        ref={playheadParent}
+      >
         <div className="relative flex flex-col w-[95vw] bg-white h-5 my-5">
-          <input
-            onChange={updatePlayhead}
-            id="playhead"
-            type="range"
-            defaultValue="1"
-            min="0"
-            max="100"
-            step="0.01"
-            className="absolute w-[100vw] bg-gray-200 floored-lg appearance-none cursor-pointer dark:bg-gray-700"
-            ref={playhead}
-          ></input>
-
           <div
             id="playheadDiv"
             ref={playheadDiv}

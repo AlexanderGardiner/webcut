@@ -13,6 +13,7 @@ export class TimelineVideo {
   leftSelect: HTMLButtonElement;
   rightSelect: HTMLButtonElement;
   timelineFPS: number;
+  timelineDuration: number;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -20,7 +21,8 @@ export class TimelineVideo {
     video: HTMLVideoElement,
     transform: Transform,
     timelineRow: TimelineRow,
-    timelineFPS: number
+    timelineFPS: number,
+    timelineDuration: number
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -28,6 +30,7 @@ export class TimelineVideo {
     this.video = video;
     this.timelineRow = timelineRow;
     this.timelineFPS = timelineFPS;
+    this.timelineDuration = timelineDuration;
     this.ui = document.createElement("div");
 
     this.ui.className =
@@ -57,11 +60,11 @@ export class TimelineVideo {
       `
             width: ${(
               (timelineRow.ui.clientWidth * this.video.duration) /
-              100
+              timelineDuration
             ).toString()}px; 
             left: ${(
               (timelineRow.ui.clientWidth * startPoint) /
-              100
+              timelineDuration
             ).toString()}px;
             top: 0px;
         `
@@ -110,11 +113,11 @@ export class TimelineVideo {
             width: ${(
               (this.timelineRow.ui.clientWidth *
                 (this.endPoint - this.startPoint)) /
-              100
+              this.timelineDuration
             ).toString()}px; 
             left: ${(
               (this.timelineRow.ui.clientWidth * this.startPoint) /
-              100
+              this.timelineDuration
             ).toString()}px;
             top: 0px;
         `
@@ -144,7 +147,7 @@ export class TimelineVideo {
 
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (100 * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
         this.startPoint =
@@ -178,7 +181,7 @@ export class TimelineVideo {
       console.log("MouseMove event triggered");
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (100 * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x < this.endPoint && x >= this.endPoint - this.video.duration) {
         this.inPoint +=
@@ -211,7 +214,7 @@ export class TimelineVideo {
       console.log("MouseMove event triggered");
       var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
       var x =
-        (100 * (e.clientX - timelineRowRect.left)) /
+        (this.timelineDuration * (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
       if (x - this.startPoint <= this.video.duration && x > this.startPoint) {
         this.endPoint = Math.floor(x * this.timelineFPS) / this.timelineFPS;

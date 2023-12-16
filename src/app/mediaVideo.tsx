@@ -7,11 +7,13 @@ export class MediaVideo {
   previewImage: HTMLImageElement;
   timelineRows: TimelineRow[];
   timelineFPS: number;
+  timelineDuration: number;
   constructor(
     video: HTMLVideoElement,
     parent: HTMLElement,
     timelineRows: TimelineRow[],
-    timelineFPS: number
+    timelineFPS: number,
+    timelineDuration: number
   ) {
     console.log(video);
     this.video = video;
@@ -20,6 +22,7 @@ export class MediaVideo {
     let previewImageCanvas = document.createElement("canvas");
     let previewImageCTX = previewImageCanvas.getContext("2d");
     this.timelineFPS = timelineFPS;
+    this.timelineDuration = timelineDuration;
     this.video.addEventListener("loadeddata", () => {
       previewImageCanvas.width = this.video.width;
       previewImageCanvas.height = this.video.height;
@@ -62,7 +65,7 @@ export class MediaVideo {
       `
                 width: ${(
                   (this.timelineRows[0].ui.clientWidth * video.duration) /
-                  100
+                  this.timelineDuration
                 ).toString()}px; 
                 left: 0px;
             `
@@ -138,8 +141,7 @@ export class MediaVideo {
     originalVideo: HTMLVideoElement
   ) {
     var rect = this.timelineRows[i].ui.getBoundingClientRect();
-    var x = (100 * (e.clientX - rect.left)) / rect.width;
-    var y = (100 * (e.clientY - rect.top)) / rect.height;
+    var x = (this.timelineDuration * (e.clientX - rect.left)) / rect.width;
     let canAddVideo = true;
     for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
       if (
@@ -163,7 +165,8 @@ export class MediaVideo {
             video,
             new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
             this.timelineRows[i],
-            this.timelineFPS
+            this.timelineFPS,
+            this.timelineDuration
           )
         );
         video.pause();
