@@ -15,6 +15,7 @@ export class TimelineVideo {
   timelineFPS: number;
   timelineDuration: number;
   selected: boolean;
+  videoFPS: number;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -23,7 +24,8 @@ export class TimelineVideo {
     transform: Transform,
     timelineRow: TimelineRow,
     timelineFPS: number,
-    timelineDuration: number
+    timelineDuration: number,
+    videoFPS: number
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -32,6 +34,7 @@ export class TimelineVideo {
     this.timelineRow = timelineRow;
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
+    this.videoFPS = videoFPS;
     this.ui = document.createElement("div");
     this.selected = false;
 

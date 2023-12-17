@@ -58,6 +58,7 @@ export default function Home() {
           previewCTX!.translate(-centerX, -centerY);
 
           if (!playing) {
+            timelineRows[i].videos[j].video.play();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (
                 Math.floor(
@@ -67,7 +68,6 @@ export default function Home() {
                 ) / fps
               ).toFixed(3)
             );
-            timelineRows[i].videos[j].video.play();
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             timelineRows[i].videos[j].video.currentTime = parseFloat(
@@ -93,9 +93,20 @@ export default function Home() {
             canPlay = false;
           }
         } else {
-          timelineRows[i].videos[j].video.currentTime = parseFloat(
-            (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
-          );
+          if (timelineTime < timelineRows[i].videos[j].startPoint) {
+            timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
+            );
+          } else {
+            timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (
+                (timelineRows[i].videos[j].inPoint +
+                  (timelineRows[i].videos[j].endPoint -
+                    timelineRows[i].videos[j].startPoint)) /
+                fps
+              ).toFixed(3)
+            );
+          }
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
@@ -118,13 +129,14 @@ export default function Home() {
     video.src = media;
     video.width = 1600;
     video.height = 900;
-
+    let videoFPS = window.prompt("Input the FPS of the video", "60");
     new MediaVideo(
       video,
       mediaPool.current!,
       timelineRows,
       fps,
-      timelineDuration
+      timelineDuration,
+      parseInt(videoFPS!)
     );
   }
 
@@ -173,19 +185,21 @@ export default function Home() {
           video.play();
 
           video.addEventListener("loadeddata", () => {
+            console.log(Math.ceil(fps / timelineRows[i].videos[j].videoFPS));
             timelineRows[i].videos.push(
               new TimelineVideo(
                 timelineTime -
                   timelineRows[i].videos[j].startPoint +
                   timelineRows[i].videos[j].inPoint +
-                  1,
+                  Math.ceil(fps / timelineRows[i].videos[j].videoFPS),
                 timelineTime + 1,
                 timelineRows[i].videos[j].endPoint,
                 video,
                 timelineRows[i].videos[j].transform,
                 timelineRows[i],
                 fps,
-                timelineDuration
+                timelineDuration,
+                timelineRows[i].videos[j].videoFPS
               )
             );
             timelineRows[i].videos[j].endPoint = timelineTime;
@@ -202,11 +216,7 @@ export default function Home() {
   function deleteVideo() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
-        if (
-          timelineRows[i].videos[j].startPoint <= timelineTime &&
-          timelineRows[i].videos[j].endPoint >= timelineTime &&
-          timelineRows[i].videos[j].selected
-        ) {
+        if (timelineRows[i].videos[j].selected) {
           timelineRows[i].videos[j].removeHTML();
           delete timelineRows[i].videos[j];
           timelineRows[i].videos.splice(j);
