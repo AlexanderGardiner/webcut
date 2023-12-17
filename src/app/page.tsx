@@ -178,8 +178,7 @@ export default function Home() {
     playing = !playing;
   }
 
-  function makeCut() {
-    console.log("trying to cut");
+  async function makeCut() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (
@@ -187,13 +186,15 @@ export default function Home() {
           timelineRows[i].videos[j].endPoint >= timelineTime &&
           timelineRows[i].videos[j].selected
         ) {
-          console.log("makingCut");
           let video = document.createElement("video");
-          video.src = timelineRows[i].videos[j].video.src;
+          let blob = await fetch(timelineRows[i].videos[j].video.src).then(
+            (r) => r.blob()
+          );
+          let newSrc = URL.createObjectURL(blob);
+          video.src = newSrc;
           video.play();
 
           video.addEventListener("loadeddata", () => {
-            console.log(Math.ceil(fps / timelineRows[i].videos[j].videoFPS));
             timelineRows[i].videos.push(
               new TimelineVideo(
                 timelineTime -
@@ -210,9 +211,7 @@ export default function Home() {
               )
             );
             timelineRows[i].videos[j].endPoint = timelineTime;
-            console.log(
-              timelineRows[i].videos[timelineRows[i].videos.length - 1]
-            );
+
             timelineRows[i].videos[j].updatePreviewImage();
             video.pause();
           });
@@ -226,12 +225,9 @@ export default function Home() {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (timelineRows[i].videos[j].selected) {
           timelineRows[i].videos[j].removeHTML();
-          delete timelineRows[i].videos[j];
-          timelineRows[i].videos.splice(j);
-          j -= 1;
+          timelineRows[i].videos.splice(j, 1);
         }
       }
-      console.log(timelineRows[i].videos);
     }
   }
   useEffect(() => {
@@ -272,7 +268,6 @@ export default function Home() {
         if (e.code == "Delete") {
           deleteVideo();
         }
-        console.log(timelineTime);
       });
     }
   }, []);
