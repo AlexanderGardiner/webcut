@@ -14,6 +14,7 @@ export class TimelineVideo {
   rightSelect: HTMLButtonElement;
   timelineFPS: number;
   timelineDuration: number;
+  selected: boolean;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -32,6 +33,7 @@ export class TimelineVideo {
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
     this.ui = document.createElement("div");
+    this.selected = false;
 
     this.ui.className =
       "absolute flex bg-slate-100 py-5 px-0 pointer-events-none";
@@ -101,10 +103,16 @@ export class TimelineVideo {
       this.startEndPointAdjustment.bind(this)
     );
 
-    this.previewImage.addEventListener("mousedown", this.dragVideo.bind(this));
+    this.previewImage.addEventListener("mousedown", this.mouseDown.bind(this));
     this.ui.appendChild(this.leftSelect);
     this.ui.appendChild(this.rightSelect);
     this.transform = transform;
+
+    document.body.addEventListener("keydown", (e) => {
+      if (e.code == "Escape") {
+        this.deselect();
+      }
+    });
   }
 
   updatePreviewImage() {
@@ -125,6 +133,39 @@ export class TimelineVideo {
     );
   }
 
+  mouseDown(event: MouseEvent) {
+    let canDrag = true;
+    event.preventDefault();
+    const handleMouseUp = (e: MouseEvent) => {
+      this.selected = !this.selected;
+      this.updateSelectedUI();
+      canDrag = false;
+      e.preventDefault();
+      e.stopPropagation();
+      document.body.removeEventListener("mouseup", handleMouseUp, true);
+      document.body.removeEventListener(
+        "mousemove",
+        handleMouseMove.bind(this)
+      );
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      document.body.removeEventListener("mouseup", handleMouseUp, true);
+      document.body.removeEventListener(
+        "mousemove",
+        handleMouseMove.bind(this)
+      );
+      if (canDrag) {
+        this.selected = true;
+        this.updateSelectedUI();
+        this.dragVideo(event);
+        canDrag = false;
+      }
+    };
+    document.body.addEventListener("mouseup", handleMouseUp, true);
+    document.body.addEventListener("mousemove", handleMouseMove.bind(this));
+  }
+
   dragVideo(event: MouseEvent) {
     event.preventDefault();
     var videoRect = this.ui.getBoundingClientRect();
@@ -133,7 +174,8 @@ export class TimelineVideo {
       videoRect.width;
     let width = this.endPoint - this.startPoint;
     const handleMouseUp = (e: MouseEvent) => {
-      document.body.removeEventListener("mouseup", handleMouseUp);
+      e.preventDefault();
+      document.body.removeEventListener("mouseup", handleMouseUp, true);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
@@ -156,11 +198,26 @@ export class TimelineVideo {
     document.body.addEventListener("mousemove", handleMouseMove);
   }
 
+  deselect() {
+    this.selected = false;
+    this.updateSelectedUI();
+  }
+
+  updateSelectedUI() {
+    if (this.selected) {
+      this.ui.classList.remove("opacity-100");
+      this.ui.classList.add("opacity-50");
+    } else {
+      this.ui.classList.remove("opacity-50");
+      this.ui.classList.add("opacity-100");
+    }
+  }
+
   startInPointAdjustment(event: MouseEvent) {
     event.preventDefault();
 
     const handleMouseUp = (e: MouseEvent) => {
-      document.body.removeEventListener("mouseup", handleMouseUp);
+      document.body.removeEventListener("mouseup", handleMouseUp, true);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
@@ -191,7 +248,7 @@ export class TimelineVideo {
     event.preventDefault();
 
     const handleMouseUp = (e: MouseEvent) => {
-      document.body.removeEventListener("mouseup", handleMouseUp);
+      document.body.removeEventListener("mouseup", handleMouseUp, true);
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 

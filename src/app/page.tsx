@@ -57,6 +57,7 @@ export default function Home() {
           previewCTX!.translate(-centerX, -centerY);
 
           if (!playing) {
+            timelineRows[i].videos[j].video.play();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (
                 Math.floor(
@@ -66,7 +67,6 @@ export default function Home() {
                 ) / fps
               ).toFixed(3)
             );
-            timelineRows[i].videos[j].video.pause();
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             timelineRows[i].videos[j].video.currentTime = parseFloat(
