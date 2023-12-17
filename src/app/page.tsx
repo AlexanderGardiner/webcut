@@ -98,14 +98,20 @@ export default function Home() {
               (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
             );
           } else {
-            timelineRows[i].videos[j].video.currentTime = parseFloat(
-              (
-                (timelineRows[i].videos[j].inPoint +
-                  (timelineRows[i].videos[j].endPoint -
-                    timelineRows[i].videos[j].startPoint)) /
-                fps
-              ).toFixed(3)
-            );
+            if (
+              timelineRows[i].videos[j].startPoint >=
+                timelineTime + fps / timelineRows[i].videos[j].videoFPS ||
+              timelineRows[i].videos[j].endPoint <= timelineTime
+            ) {
+              timelineRows[i].videos[j].video.currentTime = parseFloat(
+                (
+                  (timelineRows[i].videos[j].inPoint +
+                    (timelineRows[i].videos[j].endPoint -
+                      timelineRows[i].videos[j].startPoint)) /
+                  fps
+                ).toFixed(3)
+              );
+            }
           }
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
@@ -191,7 +197,7 @@ export default function Home() {
                 timelineTime -
                   timelineRows[i].videos[j].startPoint +
                   timelineRows[i].videos[j].inPoint +
-                  Math.ceil(fps / timelineRows[i].videos[j].videoFPS),
+                  Math.round(fps / timelineRows[i].videos[j].videoFPS),
                 timelineTime + 1,
                 timelineRows[i].videos[j].endPoint,
                 video,
