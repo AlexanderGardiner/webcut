@@ -5,6 +5,7 @@ import { TimelineRow } from "./timelineRow";
 
 import { MediaVideo } from "./mediaVideo";
 import Script from "next/script";
+import { TimelineVideo } from "./timelineVideo";
 
 export default function Home() {
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -57,7 +58,6 @@ export default function Home() {
           previewCTX!.translate(-centerX, -centerY);
 
           if (!playing) {
-            timelineRows[i].videos[j].video.play();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (
                 Math.floor(
@@ -67,6 +67,7 @@ export default function Home() {
                 ) / fps
               ).toFixed(3)
             );
+            timelineRows[i].videos[j].video.play();
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
             timelineRows[i].videos[j].video.currentTime = parseFloat(
@@ -92,8 +93,9 @@ export default function Home() {
             canPlay = false;
           }
         } else {
-          timelineRows[i].videos[j].video.currentTime = 0;
-          timelineRows[i].videos[j].video.pause();
+          timelineRows[i].videos[j].video.currentTime = parseFloat(
+            (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
+          );
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
@@ -155,6 +157,47 @@ export default function Home() {
   function toggleVideoPlay() {
     playing = !playing;
   }
+
+  function makeCut() {
+    console.log("trying to cut");
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        if (
+          timelineRows[i].videos[j].startPoint <= timelineTime &&
+          timelineRows[i].videos[j].endPoint >= timelineTime &&
+          timelineRows[i].videos[j].selected
+        ) {
+          console.log("makingCut");
+          let video = document.createElement("video");
+          video.src = timelineRows[i].videos[j].video.src;
+          video.play();
+
+          video.addEventListener("loadeddata", () => {
+            timelineRows[i].videos.push(
+              new TimelineVideo(
+                timelineTime -
+                  timelineRows[i].videos[j].startPoint +
+                  timelineRows[i].videos[j].inPoint +
+                  1,
+                timelineTime + 1,
+                timelineRows[i].videos[j].endPoint,
+                video,
+                timelineRows[i].videos[j].transform,
+                timelineRows[i],
+                fps,
+                timelineDuration
+              )
+            );
+            timelineRows[i].videos[j].endPoint = timelineTime;
+            console.log(
+              timelineRows[i].videos[timelineRows[i].videos.length - 1]
+            );
+            timelineRows[i].videos[j].updatePreviewImage();
+          });
+        }
+      }
+    }
+  }
   useEffect(() => {
     if (!initalized) {
       initalized = true;
@@ -179,6 +222,19 @@ export default function Home() {
         timelineRows.push(new TimelineRow(i, timelineRowsElement.current!));
       }
       step();
+
+      document.body.addEventListener("keyup", (e) => {
+        if (e.code == "KeyW") {
+          makeCut();
+        }
+        if (e.code == "ArrowRight") {
+          timelineTime += 1;
+        }
+        if (e.code == "ArrowLeft") {
+          timelineTime -= 1;
+        }
+        console.log(timelineTime);
+      });
     }
   }, []);
 

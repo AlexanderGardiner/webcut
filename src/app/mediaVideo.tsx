@@ -164,7 +164,6 @@ export class MediaVideo {
             this.timelineDuration
           )
         );
-        video.pause();
       });
     }
 
