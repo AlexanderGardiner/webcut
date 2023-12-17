@@ -198,6 +198,14 @@ export class TimelineVideo {
     document.body.addEventListener("mousemove", handleMouseMove);
   }
 
+  removeHTML() {
+    this.ui.remove();
+    this.video.pause();
+    this.video.removeAttribute("src"); // empty source
+    this.video.load();
+    this.video.remove();
+  }
+
   deselect() {
     this.selected = false;
     this.updateSelectedUI();

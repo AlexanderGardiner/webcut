@@ -198,6 +198,24 @@ export default function Home() {
       }
     }
   }
+
+  function deleteVideo() {
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        if (
+          timelineRows[i].videos[j].startPoint <= timelineTime &&
+          timelineRows[i].videos[j].endPoint >= timelineTime &&
+          timelineRows[i].videos[j].selected
+        ) {
+          timelineRows[i].videos[j].removeHTML();
+          delete timelineRows[i].videos[j];
+          timelineRows[i].videos.splice(j);
+          j -= 1;
+        }
+      }
+      console.log(timelineRows[i].videos);
+    }
+  }
   useEffect(() => {
     if (!initalized) {
       initalized = true;
@@ -232,6 +250,9 @@ export default function Home() {
         }
         if (e.code == "ArrowLeft") {
           timelineTime -= 1;
+        }
+        if (e.code == "Delete") {
+          deleteVideo();
         }
         console.log(timelineTime);
       });
