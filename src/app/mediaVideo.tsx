@@ -171,6 +171,7 @@ export class MediaVideo {
             this.videoFPS
           )
         );
+        video.pause();
       });
     }
 

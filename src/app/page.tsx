@@ -58,7 +58,7 @@ export default function Home() {
           previewCTX!.translate(-centerX, -centerY);
 
           if (!playing) {
-            timelineRows[i].videos[j].video.play();
+            timelineRows[i].videos[j].video.pause();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (
                 Math.floor(
@@ -93,25 +93,27 @@ export default function Home() {
             canPlay = false;
           }
         } else {
-          if (timelineTime < timelineRows[i].videos[j].startPoint) {
+          if (
+            timelineTime <
+            timelineRows[i].videos[j].startPoint +
+              fps / timelineRows[i].videos[j].videoFPS
+          ) {
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
             );
-          } else {
-            if (
-              timelineRows[i].videos[j].startPoint >=
-                timelineTime + fps / timelineRows[i].videos[j].videoFPS ||
-              timelineRows[i].videos[j].endPoint <= timelineTime
-            ) {
-              timelineRows[i].videos[j].video.currentTime = parseFloat(
-                (
-                  (timelineRows[i].videos[j].inPoint +
-                    (timelineRows[i].videos[j].endPoint -
-                      timelineRows[i].videos[j].startPoint)) /
-                  fps
-                ).toFixed(3)
-              );
-            }
+          } else if (
+            timelineTime >
+            timelineRows[i].videos[j].endPoint -
+              fps / timelineRows[i].videos[j].videoFPS
+          ) {
+            timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (
+                (timelineRows[i].videos[j].inPoint +
+                  (timelineRows[i].videos[j].endPoint -
+                    timelineRows[i].videos[j].startPoint)) /
+                fps
+              ).toFixed(3)
+            );
           }
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
@@ -196,8 +198,7 @@ export default function Home() {
               new TimelineVideo(
                 timelineTime -
                   timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint +
-                  Math.round(fps / timelineRows[i].videos[j].videoFPS),
+                  timelineRows[i].videos[j].inPoint,
                 timelineTime + 1,
                 timelineRows[i].videos[j].endPoint,
                 video,
@@ -213,6 +214,7 @@ export default function Home() {
               timelineRows[i].videos[timelineRows[i].videos.length - 1]
             );
             timelineRows[i].videos[j].updatePreviewImage();
+            video.pause();
           });
         }
       }
