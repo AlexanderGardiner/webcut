@@ -15,7 +15,7 @@ export default function Home() {
   let playheadParent = useRef<HTMLDivElement>(null);
   let mediaPool = useRef<HTMLDivElement>(null);
   let timelineRowsElement = useRef<HTMLDivElement>(null);
-  let fps = 60;
+  let fps = 30;
   let timelineRows: TimelineRow[] = [];
 
   let playing = false;
@@ -94,28 +94,10 @@ export default function Home() {
             canPlay = false;
           }
         } else {
-          if (
-            timelineTime <
-            timelineRows[i].videos[j].startPoint +
-              fps / timelineRows[i].videos[j].videoFPS
-          ) {
-            timelineRows[i].videos[j].video.currentTime = parseFloat(
-              (timelineRows[i].videos[j].inPoint / fps).toFixed(3)
-            );
-          } else if (
-            timelineTime >
-            timelineRows[i].videos[j].endPoint -
-              fps / timelineRows[i].videos[j].videoFPS
-          ) {
-            timelineRows[i].videos[j].video.currentTime = parseFloat(
-              (
-                (timelineRows[i].videos[j].inPoint +
-                  (timelineRows[i].videos[j].endPoint -
-                    timelineRows[i].videos[j].startPoint)) /
-                fps
-              ).toFixed(3)
-            );
-          }
+          timelineRows[i].videos[j].video.pause();
+          timelineRows[i].videos[j].video.currentTime = parseFloat(
+            (Math.floor(timelineRows[i].videos[j].inPoint) / fps).toFixed(3)
+          );
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
       }
