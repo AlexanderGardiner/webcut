@@ -1,13 +1,14 @@
 "use client";
-import React, { useEffect, useRef } from "react";
-import { FaPlay } from "react-icons/fa";
+import React, { useEffect, useRef, useState } from "react";
+import { FaPlay, FaLock, FaUnlock } from "react-icons/fa";
 import { TimelineRow } from "./timelineRow";
 
 import { MediaVideo } from "./mediaVideo";
 import Script from "next/script";
 import { TimelineVideo } from "./timelineVideo";
-
+import {} from "react-icons/fa";
 export default function Home() {
+  let [snappingEnabled, setSnapping] = useState(false);
   let previewCanvas = useRef<HTMLCanvasElement>(null);
   let previewCTX: CanvasRenderingContext2D;
   let playheadDiv = useRef<HTMLDivElement>(null);
@@ -268,6 +269,12 @@ export default function Home() {
         if (e.code == "Delete") {
           deleteVideo();
         }
+        if (e.code == "KeyL") {
+          setSnapping((current) => {
+            snappingEnabled = !current;
+            return snappingEnabled;
+          });
+        }
       });
     }
   }, []);
@@ -304,9 +311,13 @@ export default function Home() {
               className="border-2 border-gray-400 w-min max-h-full max-w-full"
             ></canvas>
           </div>
-          <button onClick={toggleVideoPlay}>
-            <FaPlay className="" style={{ color: "#6a84f4" }} size={20} />
-          </button>
+          <div className="flex flex-row">
+            <button onClick={toggleVideoPlay} className="px-5">
+              <FaPlay className="" style={{ color: "#6a84f4" }} size={20} />
+            </button>
+            <FaLock className={snappingEnabled ? "" : "hidden"}></FaLock>
+            <FaUnlock className={snappingEnabled ? "hidden" : ""}></FaUnlock>
+          </div>
         </div>
 
         <div className="items-end text-right max-h-[50vh] border-2 border-gray-400 w-full">
@@ -342,7 +353,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <Script></Script>
     </div>
   );
 }
