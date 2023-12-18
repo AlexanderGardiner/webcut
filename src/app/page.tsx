@@ -8,13 +8,15 @@ import Script from "next/script";
 import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
 export default function Home() {
-  let [snappingEnabled, setSnapping] = useState(false);
+  let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
   let previewCTX: CanvasRenderingContext2D;
   let playheadDiv = useRef<HTMLDivElement>(null);
   let playheadParent = useRef<HTMLDivElement>(null);
   let mediaPool = useRef<HTMLDivElement>(null);
   let timelineRowsElement = useRef<HTMLDivElement>(null);
+  let snappingEnabledIndicator = useRef<HTMLDivElement>(null);
+  let snappingDisabledIndicator = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
 
@@ -71,6 +73,7 @@ export default function Home() {
             );
           }
           if (playing && timelineRows[i].videos[j].video.paused) {
+            timelineRows[i].videos[j].video.play();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
               (
                 Math.floor(
@@ -80,8 +83,6 @@ export default function Home() {
                 ) / fps
               ).toFixed(3)
             );
-
-            timelineRows[i].videos[j].video.play();
           }
           previewCTX!.drawImage(
             timelineRows[i].videos[j].video,
@@ -100,6 +101,21 @@ export default function Home() {
           );
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
+        if (!playing) {
+          if (snappingEnabled) {
+            if (
+              timelineTime > timelineRows[i].videos[j].startPoint - fps &&
+              timelineTime < timelineRows[i].videos[j].startPoint + fps
+            ) {
+              timelineTime = timelineRows[i].videos[j].startPoint;
+            } else if (
+              timelineTime < timelineRows[i].videos[j].endPoint + fps &&
+              timelineTime > timelineRows[i].videos[j].endPoint - fps
+            ) {
+              timelineTime = timelineRows[i].videos[j].endPoint;
+            }
+          }
+        }
       }
     }
 
@@ -182,7 +198,8 @@ export default function Home() {
               new TimelineVideo(
                 timelineTime -
                   timelineRows[i].videos[j].startPoint +
-                  timelineRows[i].videos[j].inPoint,
+                  timelineRows[i].videos[j].inPoint +
+                  timelineRows[i].videos[j].videoFPS / fps,
                 timelineTime + 1,
                 timelineRows[i].videos[j].endPoint,
                 video,
@@ -219,10 +236,6 @@ export default function Home() {
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
       previewCTX = previewCanvas.current!.getContext("2d")!;
-      // playheadDiv.current!.addEventListener("mousedown", (e) => {
-      //   e.preventDefault();
-      //   movePlayhead();
-      // });
 
       playheadParent.current!.addEventListener("mousedown", (e) => {
         e.preventDefault();
@@ -239,6 +252,8 @@ export default function Home() {
       step();
 
       document.body.addEventListener("keyup", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (e.code == "KeyW") {
           makeCut();
         }
@@ -252,10 +267,14 @@ export default function Home() {
           deleteVideo();
         }
         if (e.code == "KeyL") {
-          setSnapping((current) => {
-            snappingEnabled = !current;
-            return snappingEnabled;
-          });
+          snappingEnabled = !snappingEnabled;
+          if (snappingEnabled) {
+            snappingEnabledIndicator.current!.classList.remove("hidden");
+            snappingDisabledIndicator.current!.classList.add("hidden");
+          } else {
+            snappingEnabledIndicator.current!.classList.add("hidden");
+            snappingDisabledIndicator.current!.classList.remove("hidden");
+          }
         }
       });
     }
@@ -295,10 +314,16 @@ export default function Home() {
           </div>
           <div className="flex flex-row">
             <button onClick={toggleVideoPlay} className="px-5">
-              <FaPlay className="" style={{ color: "#6a84f4" }} size={20} />
+              <FaPlay style={{ color: "#6a84f4" }} size={20} />
             </button>
-            <FaLock className={snappingEnabled ? "" : "hidden"}></FaLock>
-            <FaUnlock className={snappingEnabled ? "hidden" : ""}></FaUnlock>
+            <div>
+              <div ref={snappingEnabledIndicator}>
+                <FaLock className="absolute"></FaLock>
+              </div>
+              <div ref={snappingDisabledIndicator} className="hidden">
+                <FaUnlock className="absolute"></FaUnlock>
+              </div>
+            </div>
           </div>
         </div>
 

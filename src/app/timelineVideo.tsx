@@ -110,6 +110,7 @@ export class TimelineVideo {
     this.ui.appendChild(this.leftSelect);
     this.ui.appendChild(this.rightSelect);
     this.transform = transform;
+    this.video.classList.add("hidden");
     document.body.appendChild(this.video);
 
     document.body.addEventListener("keydown", (e) => {
