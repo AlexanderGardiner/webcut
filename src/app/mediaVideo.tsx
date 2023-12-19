@@ -26,8 +26,8 @@ export class MediaVideo {
     this.timelineDuration = timelineDuration;
     this.videoFPS = videoFPS;
     this.video.addEventListener("loadeddata", () => {
-      previewImageCanvas.width = this.video.width;
-      previewImageCanvas.height = this.video.height;
+      previewImageCanvas.width = this.video.videoWidth;
+      previewImageCanvas.height = this.video.videoHeight;
 
       if (previewImageCTX) {
         previewImageCTX.drawImage(
@@ -164,7 +164,13 @@ export class MediaVideo {
             startPoint,
             endPoint,
             video,
-            new Transform(0, 0, 1600, 900, Math.random() * 2 * Math.PI),
+            new Transform(
+              0,
+              0,
+              video.videoWidth,
+              video.videoHeight,
+              Math.random() * 2 * Math.PI
+            ),
             this.timelineRows[i],
             this.timelineFPS,
             this.timelineDuration,

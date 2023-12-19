@@ -134,8 +134,7 @@ export default function Home() {
 
     let media = URL.createObjectURL(file);
     video.src = media;
-    video.width = 1600;
-    video.height = 900;
+
     let videoFPS = window.prompt("Input the FPS of the video", "60");
     new MediaVideo(
       video,
