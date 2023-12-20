@@ -10,6 +10,7 @@ export class MediaVideo {
   timelineDuration: number;
   videoFPS: number;
   propertiesUI: HTMLDivElement;
+  snappingEnabled: boolean;
   constructor(
     video: HTMLVideoElement,
     parent: HTMLElement,
@@ -17,7 +18,8 @@ export class MediaVideo {
     timelineFPS: number,
     timelineDuration: number,
     videoFPS: number,
-    propertiesUI: HTMLDivElement
+    propertiesUI: HTMLDivElement,
+    snappingEnabled: boolean
   ) {
     this.video = video;
     this.previewImage = document.createElement("img");
@@ -28,6 +30,7 @@ export class MediaVideo {
     this.timelineDuration = timelineDuration;
     this.videoFPS = videoFPS;
     this.propertiesUI = propertiesUI;
+    this.snappingEnabled = snappingEnabled;
     this.video.addEventListener("loadeddata", () => {
       previewImageCanvas.width = this.video.videoWidth;
       previewImageCanvas.height = this.video.videoHeight;
@@ -126,6 +129,10 @@ export class MediaVideo {
     }
   }
 
+  setSnappingEnabled(snappingEnabled: boolean) {
+    this.snappingEnabled = snappingEnabled;
+  }
+
   updateDraggedVideoPosition(e: MouseEvent, tempVideo: HTMLImageElement) {
     tempVideo.style.left = e.x + "px";
     tempVideo.style.top = e.y + "px";
@@ -178,7 +185,8 @@ export class MediaVideo {
             this.timelineFPS,
             this.timelineDuration,
             this.videoFPS,
-            this.propertiesUI
+            this.propertiesUI,
+            this.snappingEnabled
           )
         );
         video.pause();

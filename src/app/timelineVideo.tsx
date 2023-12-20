@@ -21,6 +21,7 @@ export class TimelineVideo {
   transformUI: any;
   propertiesUI: HTMLDivElement;
   transformUIContainer: HTMLDivElement;
+  snappingEnabled: boolean;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -31,7 +32,8 @@ export class TimelineVideo {
     timelineFPS: number,
     timelineDuration: number,
     videoFPS: number,
-    propertiesUI: HTMLDivElement
+    propertiesUI: HTMLDivElement,
+    snappingEnabled: boolean
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -43,6 +45,7 @@ export class TimelineVideo {
     this.videoFPS = videoFPS;
     this.transform = transform;
     this.propertiesUI = propertiesUI;
+    this.snappingEnabled = snappingEnabled;
     this.ui = document.createElement("div");
     this.transformUIContainer = document.createElement("div");
 
@@ -101,7 +104,7 @@ export class TimelineVideo {
     );
     this.leftSelect.addEventListener(
       "mousedown",
-      this.startInPointAdjustment.bind(this)
+      this.startStartPointAdjustment.bind(this)
     );
 
     this.rightSelect = document.createElement("button");
@@ -132,6 +135,10 @@ export class TimelineVideo {
         this.deselect();
       }
     });
+  }
+
+  setSnappingEnabled(snappingEnabled: boolean) {
+    this.snappingEnabled = snappingEnabled;
   }
 
   updatePreviewImage() {
@@ -207,7 +214,30 @@ export class TimelineVideo {
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
-      this.startPoint = Math.floor(x - initalMousePosition);
+      x = Math.floor(x - initalMousePosition);
+      if (this.snappingEnabled) {
+        for (let i = 0; i < this.timelineRow.videos.length; i++) {
+          if (
+            x > this.timelineRow.videos[i].endPoint - this.timelineFPS &&
+            x < this.timelineRow.videos[i].endPoint + this.timelineFPS &&
+            this.timelineRow.videos[i] != this
+          ) {
+            x = this.timelineRow.videos[i].endPoint + 1;
+          }
+
+          if (
+            x + width >
+              this.timelineRow.videos[i].startPoint - this.timelineFPS &&
+            x + width <
+              this.timelineRow.videos[i].startPoint + this.timelineFPS &&
+            this.timelineRow.videos[i] != this
+          ) {
+            x = this.timelineRow.videos[i].startPoint - width - 1;
+          }
+        }
+      }
+
+      this.startPoint = x;
       this.endPoint = this.startPoint + width;
 
       this.updatePreviewImage();
@@ -242,7 +272,7 @@ export class TimelineVideo {
     }
   }
 
-  startInPointAdjustment(event: MouseEvent) {
+  startStartPointAdjustment(event: MouseEvent) {
     event.preventDefault();
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -258,6 +288,18 @@ export class TimelineVideo {
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
+      if (this.snappingEnabled) {
+        for (let i = 0; i < this.timelineRow.videos.length; i++) {
+          if (
+            x > this.timelineRow.videos[i].endPoint - this.timelineFPS &&
+            x < this.timelineRow.videos[i].endPoint + this.timelineFPS &&
+            this.timelineRow.videos[i] != this
+          ) {
+            x = this.timelineRow.videos[i].endPoint + 1;
+          }
+        }
+      }
+
       if (
         x < this.endPoint &&
         x >= this.endPoint - this.video.duration * this.timelineFPS
@@ -289,6 +331,17 @@ export class TimelineVideo {
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
         this.timelineRow.ui.clientWidth;
+      if (this.snappingEnabled) {
+        for (let i = 0; i < this.timelineRow.videos.length; i++) {
+          if (
+            x > this.timelineRow.videos[i].startPoint - this.timelineFPS &&
+            x < this.timelineRow.videos[i].startPoint + this.timelineFPS &&
+            this.timelineRow.videos[i] != this
+          ) {
+            x = this.timelineRow.videos[i].startPoint - 1;
+          }
+        }
+      }
       if (
         x - this.startPoint <= this.video.duration * this.timelineFPS &&
         x > this.startPoint

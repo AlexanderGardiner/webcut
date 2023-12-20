@@ -21,6 +21,7 @@ export default function Home() {
   let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
+  let mediaVideos: MediaVideo[] = [];
 
   let playing = false;
   let currentTime: number;
@@ -103,21 +104,6 @@ export default function Home() {
           );
         }
         previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
-        if (!playing) {
-          if (snappingEnabled) {
-            if (
-              timelineTime > timelineRows[i].videos[j].startPoint - fps &&
-              timelineTime < timelineRows[i].videos[j].startPoint + fps
-            ) {
-              timelineTime = timelineRows[i].videos[j].startPoint;
-            } else if (
-              timelineTime < timelineRows[i].videos[j].endPoint + fps &&
-              timelineTime > timelineRows[i].videos[j].endPoint - fps
-            ) {
-              timelineTime = timelineRows[i].videos[j].endPoint;
-            }
-          }
-        }
       }
     }
 
@@ -139,14 +125,17 @@ export default function Home() {
     video.src = media;
 
     let videoFPS = window.prompt("Input the FPS of the video", "60");
-    new MediaVideo(
-      video,
-      mediaPool.current!,
-      timelineRows,
-      fps,
-      timelineDuration,
-      parseInt(videoFPS!),
-      propertiesUI.current!
+    mediaVideos.push(
+      new MediaVideo(
+        video,
+        mediaPool.current!,
+        timelineRows,
+        fps,
+        timelineDuration,
+        parseInt(videoFPS!),
+        propertiesUI.current!,
+        snappingEnabled
+      )
     );
   }
 
@@ -161,9 +150,28 @@ export default function Home() {
     var rect = timelineRows[0].ui.getBoundingClientRect();
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      timelineTime = Math.round(
+      let tempTimelineTime = Math.round(
         (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
       );
+      if (snappingEnabled && !playing) {
+        for (let i = timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < timelineRows[i].videos.length; j++) {
+            if (
+              tempTimelineTime > timelineRows[i].videos[j].startPoint - fps &&
+              tempTimelineTime < timelineRows[i].videos[j].startPoint + fps
+            ) {
+              tempTimelineTime = timelineRows[i].videos[j].startPoint;
+            } else if (
+              tempTimelineTime < timelineRows[i].videos[j].endPoint + fps &&
+              tempTimelineTime > timelineRows[i].videos[j].endPoint - fps
+            ) {
+              tempTimelineTime = timelineRows[i].videos[j].endPoint;
+            }
+          }
+        }
+      }
+
+      timelineTime = tempTimelineTime;
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -211,7 +219,8 @@ export default function Home() {
                 fps,
                 timelineDuration,
                 timelineRows[i].videos[j].videoFPS,
-                propertiesUI.current!
+                propertiesUI.current!,
+                snappingEnabled
               )
             );
             timelineRows[i].videos[j].endPoint = timelineTime;
@@ -272,6 +281,14 @@ export default function Home() {
         }
         if (e.code == "KeyL") {
           snappingEnabled = !snappingEnabled;
+          for (let i = timelineRows.length - 1; i >= 0; i--) {
+            for (let j = 0; j < timelineRows[i].videos.length; j++) {
+              timelineRows[i].videos[j].setSnappingEnabled(snappingEnabled);
+            }
+          }
+          for (let i = mediaVideos.length - 1; i >= 0; i--) {
+            mediaVideos[i].setSnappingEnabled(snappingEnabled);
+          }
           if (snappingEnabled) {
             snappingEnabledIndicator.current!.classList.remove("hidden");
             snappingDisabledIndicator.current!.classList.add("hidden");
