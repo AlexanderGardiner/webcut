@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaPlay, FaLock, FaUnlock } from "react-icons/fa";
 import { TimelineRow } from "./timelineRow";
+import TransformUI from "./components/transformUI";
 
 import { MediaVideo } from "./mediaVideo";
 import Script from "next/script";
@@ -17,6 +18,7 @@ export default function Home() {
   let timelineRowsElement = useRef<HTMLDivElement>(null);
   let snappingEnabledIndicator = useRef<HTMLDivElement>(null);
   let snappingDisabledIndicator = useRef<HTMLDivElement>(null);
+  let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
 
@@ -120,12 +122,13 @@ export default function Home() {
     }
 
     if (playing && canPlay) {
-      timelineTime += 1;
+      timelineTime += 1; //(currentTime - previousTime) / fps;
     }
 
     previousTime = currentTime;
+
     setTimeout(() => {
-      step();
+      step(); //requestAnimationFrame(step);
     }, 1000 / fps);
   }
 
@@ -142,7 +145,8 @@ export default function Home() {
       timelineRows,
       fps,
       timelineDuration,
-      parseInt(videoFPS!)
+      parseInt(videoFPS!),
+      propertiesUI.current!
     );
   }
 
@@ -206,7 +210,8 @@ export default function Home() {
                 timelineRows[i],
                 fps,
                 timelineDuration,
-                timelineRows[i].videos[j].videoFPS
+                timelineRows[i].videos[j].videoFPS,
+                propertiesUI.current!
               )
             );
             timelineRows[i].videos[j].endPoint = timelineTime;
@@ -326,7 +331,10 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="items-end text-right max-h-[50vh] border-2 border-gray-400 w-full">
+        <div
+          className="items-end text-right max-h-[50vh] border-2 border-gray-400 w-full"
+          ref={propertiesUI}
+        >
           <h1>Properties</h1>
         </div>
       </div>

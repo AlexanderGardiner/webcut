@@ -1,3 +1,5 @@
+import { createRoot } from "react-dom/client";
+import TransformUI from "./components/transformUI";
 import { TimelineRow } from "./timelineRow";
 import { Transform } from "./transform";
 
@@ -16,6 +18,9 @@ export class TimelineVideo {
   timelineDuration: number;
   selected: boolean;
   videoFPS: number;
+  transformUI: any;
+  propertiesUI: HTMLDivElement;
+  transformUIContainer: HTMLDivElement;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -25,7 +30,8 @@ export class TimelineVideo {
     timelineRow: TimelineRow,
     timelineFPS: number,
     timelineDuration: number,
-    videoFPS: number
+    videoFPS: number,
+    propertiesUI: HTMLDivElement
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -35,7 +41,15 @@ export class TimelineVideo {
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
     this.videoFPS = videoFPS;
+    this.transform = transform;
+    this.propertiesUI = propertiesUI;
     this.ui = document.createElement("div");
+    this.transformUIContainer = document.createElement("div");
+
+    this.transformUI = createRoot(this.transformUIContainer).render(
+      <TransformUI transform={this.transform} />
+    );
+
     this.selected = false;
 
     this.ui.className =
@@ -109,7 +123,7 @@ export class TimelineVideo {
     this.previewImage.addEventListener("mousedown", this.mouseDown.bind(this));
     this.ui.appendChild(this.leftSelect);
     this.ui.appendChild(this.rightSelect);
-    this.transform = transform;
+
     this.video.classList.add("hidden");
     document.body.appendChild(this.video);
 
@@ -220,9 +234,11 @@ export class TimelineVideo {
     if (this.selected) {
       this.ui.classList.remove("opacity-100");
       this.ui.classList.add("opacity-50");
+      this.propertiesUI.appendChild(this.transformUIContainer);
     } else {
       this.ui.classList.remove("opacity-50");
       this.ui.classList.add("opacity-100");
+      this.propertiesUI.removeChild(this.transformUIContainer);
     }
   }
 
