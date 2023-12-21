@@ -9,6 +9,7 @@ import Script from "next/script";
 import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
 import { TimelineAudioRow } from "./timelineAudioRow";
+import { TimelineAudio } from "./timelineAudio";
 export default function Home() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -219,6 +220,24 @@ export default function Home() {
             }
           }
         }
+
+        for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+            if (
+              tempTimelineTime >
+                timelineAudioRows[i].audios[j].startPoint - fps &&
+              tempTimelineTime < timelineAudioRows[i].audios[j].startPoint + fps
+            ) {
+              tempTimelineTime = timelineAudioRows[i].audios[j].startPoint;
+            } else if (
+              tempTimelineTime <
+                timelineAudioRows[i].audios[j].endPoint + fps &&
+              tempTimelineTime > timelineAudioRows[i].audios[j].endPoint - fps
+            ) {
+              tempTimelineTime = timelineAudioRows[i].audios[j].endPoint;
+            }
+          }
+        }
       }
 
       timelineTime = tempTimelineTime;
@@ -279,6 +298,48 @@ export default function Home() {
 
             timelineRows[i].videos[j].updatePreviewImage();
             video.pause();
+          });
+        }
+      }
+    }
+
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        if (
+          timelineAudioRows[i].audios[j].startPoint <= timelineTime &&
+          timelineAudioRows[i].audios[j].endPoint >= timelineTime &&
+          timelineAudioRows[i].audios[j].selected
+        ) {
+          let audio = document.createElement("audio");
+          let blob = await fetch(timelineAudioRows[i].audios[j].audio.src).then(
+            (r) => r.blob()
+          );
+          let newSrc = URL.createObjectURL(blob);
+          audio.src = newSrc;
+          audio.play();
+          audio.addEventListener("loadeddata", () => {
+            timelineAudioRows[i].audios.push(
+              new TimelineAudio(
+                timelineTime -
+                  timelineAudioRows[i].audios[j].startPoint +
+                  timelineAudioRows[i].audios[j].inPoint +
+                  1,
+                timelineTime + 1,
+                timelineRows[i].videos[j].endPoint,
+                audio,
+                timelineRows,
+                timelineAudioRows,
+                i,
+                fps,
+                timelineDuration,
+                snappingEnabled
+              )
+            );
+            timelineAudioRows[i].audios[j].endPoint = timelineTime;
+
+            timelineAudioRows[i].audios[j].updatePreviewImage();
+            audio.pause();
+            console.log(timelineAudioRows[i]);
           });
         }
       }
@@ -354,6 +415,14 @@ export default function Home() {
               timelineRows[i].videos[j].setSnappingEnabled(snappingEnabled);
             }
           }
+
+          for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+            for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+              timelineAudioRows[i].audios[j].setSnappingEnabled(
+                snappingEnabled
+              );
+            }
+          }
           for (let i = mediaVideos.length - 1; i >= 0; i--) {
             mediaVideos[i].setSnappingEnabled(snappingEnabled);
           }
@@ -367,13 +436,19 @@ export default function Home() {
         }
       });
 
-      // window.addEventListener("resize", () => {
-      //   for (let i = timelineRows.length - 1; i >= 0; i--) {
-      //     for (let j = 0; j < timelineRows[i].videos.length; j++) {
-      //       timelineRows[i].videos[j].updatePreviewImage;
-      //     }
-      //   }
-      // });
+      window.addEventListener("resize", () => {
+        for (let i = timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < timelineRows[i].videos.length; j++) {
+            timelineRows[i].videos[j].updatePreviewImage();
+          }
+        }
+
+        for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+            timelineAudioRows[i].audios[j].updatePreviewImage();
+          }
+        }
+      });
     }
   }, []);
 
