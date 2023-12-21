@@ -9,7 +9,8 @@ export class TimelineVideo {
   endPoint: number;
   video: HTMLVideoElement;
   ui: HTMLDivElement;
-  timelineRow: TimelineRow;
+  timelineRows: TimelineRow[];
+  timelineRowIndex: number;
   previewImage: HTMLImageElement;
   transform: Transform;
   leftSelect: HTMLButtonElement;
@@ -28,7 +29,8 @@ export class TimelineVideo {
     endPoint: number,
     video: HTMLVideoElement,
     transform: Transform,
-    timelineRow: TimelineRow,
+    timelineRows: TimelineRow[],
+    timelineRowIndex: number,
     timelineFPS: number,
     timelineDuration: number,
     videoFPS: number,
@@ -39,7 +41,8 @@ export class TimelineVideo {
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.video = video;
-    this.timelineRow = timelineRow;
+    this.timelineRows = timelineRows;
+    this.timelineRowIndex = timelineRowIndex;
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
     this.videoFPS = videoFPS;
@@ -76,17 +79,18 @@ export class TimelineVideo {
       "absolute w-full overflow-hidden h-full pointer-events-auto";
     this.previewImage.setAttribute("style", "top:0px;");
     this.ui.appendChild(this.previewImage);
-    timelineRow.ui.appendChild(this.ui);
+    timelineRows[timelineRowIndex].ui.appendChild(this.ui);
 
     this.ui.setAttribute(
       "style",
       `
             width: ${(
-              (timelineRow.ui.clientWidth * (this.endPoint - this.startPoint)) /
+              (timelineRows[timelineRowIndex].ui.clientWidth *
+                (this.endPoint - this.startPoint)) /
               (timelineDuration * timelineFPS)
             ).toString()}px; 
             left: ${(
-              (timelineRow.ui.clientWidth * startPoint) /
+              (timelineRows[timelineRowIndex].ui.clientWidth * startPoint) /
               (timelineDuration * timelineFPS)
             ).toString()}px;
             top: 0px;
@@ -146,12 +150,13 @@ export class TimelineVideo {
       "style",
       `
             width: ${(
-              (this.timelineRow.ui.clientWidth *
+              (this.timelineRows[this.timelineRowIndex].ui.clientWidth *
                 (this.endPoint - this.startPoint)) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px; 
             left: ${(
-              (this.timelineRow.ui.clientWidth * this.startPoint) /
+              (this.timelineRows[this.timelineRowIndex].ui.clientWidth *
+                this.startPoint) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px;
             top: 0px;
@@ -208,31 +213,54 @@ export class TimelineVideo {
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
 
-      var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
+      var timelineRowRect =
+        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRow.ui.clientWidth;
+        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
       x = Math.floor(x - initalMousePosition);
       if (this.snappingEnabled) {
-        for (let i = 0; i < this.timelineRow.videos.length; i++) {
-          if (
-            x > this.timelineRow.videos[i].endPoint - this.timelineFPS &&
-            x < this.timelineRow.videos[i].endPoint + this.timelineFPS &&
-            this.timelineRow.videos[i] != this
-          ) {
-            x = this.timelineRow.videos[i].endPoint + 1;
-          }
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint + 1;
+            }
 
-          if (
-            x + width >
-              this.timelineRow.videos[i].startPoint - this.timelineFPS &&
-            x + width <
-              this.timelineRow.videos[i].startPoint + this.timelineFPS &&
-            this.timelineRow.videos[i] != this
-          ) {
-            x = this.timelineRow.videos[i].startPoint - width - 1;
+            if (
+              x + width >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x + width <
+                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint - width - 1;
+            }
+
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x <
+                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint;
+            }
+
+            if (
+              x + width >
+                this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x + width <
+                this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint - width;
+            }
           }
         }
       }
@@ -283,20 +311,33 @@ export class TimelineVideo {
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
+      var timelineRowRect =
+        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRow.ui.clientWidth;
+        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
       if (this.snappingEnabled) {
-        for (let i = 0; i < this.timelineRow.videos.length; i++) {
-          if (
-            x > this.timelineRow.videos[i].endPoint - this.timelineFPS &&
-            x < this.timelineRow.videos[i].endPoint + this.timelineFPS &&
-            this.timelineRow.videos[i] != this
-          ) {
-            x = this.timelineRow.videos[i].endPoint + 1;
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint + 1;
+            }
+
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x <
+                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint;
+            }
           }
         }
       }
@@ -326,20 +367,34 @@ export class TimelineVideo {
 
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      var timelineRowRect = this.timelineRow.ui.getBoundingClientRect();
+      var timelineRowRect =
+        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRow.ui.clientWidth;
+        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+      let width = this.endPoint - this.startPoint;
       if (this.snappingEnabled) {
-        for (let i = 0; i < this.timelineRow.videos.length; i++) {
-          if (
-            x > this.timelineRow.videos[i].startPoint - this.timelineFPS &&
-            x < this.timelineRow.videos[i].startPoint + this.timelineFPS &&
-            this.timelineRow.videos[i] != this
-          ) {
-            x = this.timelineRow.videos[i].startPoint - 1;
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x <
+                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint - 1;
+            }
+
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
+              this.timelineRows[i].videos[j] != this
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint;
+            }
           }
         }
       }

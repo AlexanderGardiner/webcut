@@ -181,7 +181,8 @@ export class MediaVideo {
               video.videoHeight,
               Math.random() * 2 * Math.PI
             ),
-            this.timelineRows[i],
+            this.timelineRows,
+            i,
             this.timelineFPS,
             this.timelineDuration,
             this.videoFPS,
