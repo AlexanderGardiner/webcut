@@ -344,7 +344,11 @@ export class TimelineVideo {
 
       if (
         x < this.endPoint &&
-        x >= this.endPoint - this.video.duration * this.timelineFPS
+        x >=
+          this.endPoint -
+            this.inPoint -
+            this.video.duration * this.timelineFPS &&
+        this.inPoint + Math.floor(x - this.startPoint) >= 0
       ) {
         this.inPoint += Math.floor(x - this.startPoint);
         this.startPoint = Math.floor(x);
@@ -399,7 +403,8 @@ export class TimelineVideo {
         }
       }
       if (
-        x - this.startPoint <= this.video.duration * this.timelineFPS &&
+        x - this.startPoint + this.inPoint <=
+          this.video.duration * this.timelineFPS &&
         x > this.startPoint
       ) {
         this.endPoint = Math.floor(x);
