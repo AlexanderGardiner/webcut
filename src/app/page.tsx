@@ -25,7 +25,7 @@ export default function Home() {
 
   let playing = false;
   let currentTime: number;
-  let previousTime: number;
+  let previousTime: number = 0;
   let timelineTime: number = 0;
   let initalized = false;
   let timelineDuration = 50;
@@ -52,6 +52,9 @@ export default function Home() {
           timelineRows[i].videos[j].startPoint <= timelineTime &&
           timelineRows[i].videos[j].endPoint >= timelineTime
         ) {
+          console.log(timelineRows[i].videos[j].video.currentTime * 30);
+          console.log(timelineTime - timelineRows[i].videos[j].startPoint);
+
           let centerX =
             timelineRows[i].videos[j].transform.x +
             timelineRows[i].videos[j].transform.width / 2;
@@ -110,12 +113,11 @@ export default function Home() {
     if (playing && canPlay) {
       timelineTime += 1; //(currentTime - previousTime) / fps;
     }
-
+    let actualFPS = 1000 / (currentTime - previousTime);
     previousTime = currentTime;
-
     setTimeout(() => {
       step(); //requestAnimationFrame(step);
-    }, 1000 / fps);
+    }, (1000 / fps) * (actualFPS / fps));
   }
 
   function importVideo(file: File) {
@@ -262,6 +264,7 @@ export default function Home() {
       for (let i = 0; i < 3; i++) {
         timelineRows.push(new TimelineRow(i, timelineRowsElement.current!));
       }
+      previousTime = performance.now() - 1000 / fps;
       step();
 
       document.body.addEventListener("keyup", (e) => {

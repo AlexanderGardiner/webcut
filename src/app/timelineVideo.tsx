@@ -253,6 +253,7 @@ export class TimelineVideo {
     this.video.removeAttribute("src"); // empty source
     this.video.load();
     this.video.remove();
+    this.transformUIContainer.remove();
   }
 
   deselect() {
