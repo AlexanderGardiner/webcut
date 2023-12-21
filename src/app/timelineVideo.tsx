@@ -315,8 +315,10 @@ export class TimelineVideo {
         }
       }
 
-      this.startPoint = x;
-      this.endPoint = this.startPoint + width;
+      if (x >= 0) {
+        this.startPoint = x;
+        this.endPoint = this.startPoint + width;
+      }
 
       this.updatePreviewImage();
     };
@@ -423,7 +425,8 @@ export class TimelineVideo {
           this.endPoint -
             this.inPoint -
             this.video.duration * this.timelineFPS &&
-        this.inPoint + Math.floor(x - this.startPoint) >= 0
+        this.inPoint + Math.floor(x - this.startPoint) >= 0 &&
+        x >= 0
       ) {
         this.inPoint += Math.floor(x - this.startPoint);
         this.startPoint = Math.floor(x);
@@ -434,6 +437,9 @@ export class TimelineVideo {
 
     document.body.addEventListener("mouseup", handleMouseUp, true);
     document.body.addEventListener("mousemove", handleMouseMove);
+  }
+  setTimelineDuration(timelineDuration: number) {
+    this.timelineDuration = timelineDuration;
   }
 
   startEndPointAdjustment(event: MouseEvent) {
@@ -505,7 +511,8 @@ export class TimelineVideo {
       if (
         x - this.startPoint + this.inPoint <=
           this.video.duration * this.timelineFPS &&
-        x > this.startPoint
+        x > this.startPoint &&
+        x - width >= 0
       ) {
         this.endPoint = Math.floor(x);
       }

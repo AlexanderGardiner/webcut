@@ -186,6 +186,9 @@ export class TimelineAudio {
     document.body.addEventListener("mouseup", handleMouseUp, true);
     document.body.addEventListener("mousemove", handleMouseMove.bind(this));
   }
+  setTimelineDuration(timelineDuration: number) {
+    this.timelineDuration = timelineDuration;
+  }
 
   dragVideo(event: MouseEvent) {
     event.preventDefault();
@@ -303,10 +306,10 @@ export class TimelineAudio {
           }
         }
       }
-
-      this.startPoint = x;
-      this.endPoint = this.startPoint + width;
-
+      if (x >= 0) {
+        this.startPoint = x;
+        this.endPoint = this.startPoint + width;
+      }
       this.updatePreviewImage();
     };
 
@@ -411,7 +414,8 @@ export class TimelineAudio {
           this.endPoint -
             this.inPoint -
             this.audio.duration * this.timelineFPS &&
-        this.inPoint + Math.floor(x - this.startPoint) >= 0
+        this.inPoint + Math.floor(x - this.startPoint) >= 0 &&
+        x >= 0
       ) {
         this.inPoint += Math.floor(x - this.startPoint);
         this.startPoint = Math.floor(x);
@@ -495,7 +499,8 @@ export class TimelineAudio {
       if (
         x - this.startPoint + this.inPoint <=
           this.audio.duration * this.timelineFPS &&
-        x > this.startPoint
+        x > this.startPoint &&
+        x - width >= 0
       ) {
         this.endPoint = Math.floor(x);
       }

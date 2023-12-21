@@ -143,6 +143,10 @@ export class MediaVideo {
     tempVideo.style.top = e.y + "px";
   }
 
+  setTimelineDuration(timelineDuration: number) {
+    this.timelineDuration = timelineDuration;
+  }
+
   endDragVideo(
     e: MouseEvent,
     tempVideo: HTMLImageElement,

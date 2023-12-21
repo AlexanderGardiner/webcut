@@ -1,11 +1,9 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, useEffect, useRef } from "react";
 import { FaPlay, FaLock, FaUnlock } from "react-icons/fa";
 import { TimelineRow } from "./timelineRow";
-import TransformUI from "./components/transformUI";
 
 import { MediaVideo } from "./mediaVideo";
-import Script from "next/script";
 import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
 import { TimelineAudioRow } from "./timelineAudioRow";
@@ -191,9 +189,11 @@ export default function Home() {
   }
 
   function setPlayhead(value: number) {
-    timelineTime = value;
+    if (value >= 0) {
+      timelineTime = value;
 
-    movePlayhead();
+      movePlayhead();
+    }
   }
 
   function movePlayhead() {
@@ -239,8 +239,9 @@ export default function Home() {
           }
         }
       }
-
-      timelineTime = tempTimelineTime;
+      if (tempTimelineTime >= 0) {
+        timelineTime = tempTimelineTime;
+      }
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -255,6 +256,25 @@ export default function Home() {
 
   function toggleVideoPlay() {
     playing = !playing;
+  }
+
+  function updateTimelineSize(event: ChangeEvent<HTMLInputElement>) {
+    timelineDuration = parseFloat((event.target as HTMLInputElement).value);
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        timelineRows[i].videos[j].setTimelineDuration(timelineDuration);
+      }
+    }
+
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        timelineAudioRows[i].audios[j].setTimelineDuration(timelineDuration);
+      }
+    }
+    for (let i = mediaVideos.length - 1; i >= 0; i--) {
+      mediaVideos[i].setTimelineDuration(timelineDuration);
+    }
+    updateElementSizes();
   }
 
   async function makeCut() {
@@ -342,6 +362,20 @@ export default function Home() {
             console.log(timelineAudioRows[i]);
           });
         }
+      }
+    }
+  }
+
+  function updateElementSizes() {
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        timelineRows[i].videos[j].updatePreviewImage();
+      }
+    }
+
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        timelineAudioRows[i].audios[j].updatePreviewImage();
       }
     }
   }
@@ -437,17 +471,7 @@ export default function Home() {
       });
 
       window.addEventListener("resize", () => {
-        for (let i = timelineRows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < timelineRows[i].videos.length; j++) {
-            timelineRows[i].videos[j].updatePreviewImage();
-          }
-        }
-
-        for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
-            timelineAudioRows[i].audios[j].updatePreviewImage();
-          }
-        }
+        updateElementSizes();
       });
     }
   }, []);
@@ -496,6 +520,14 @@ export default function Home() {
                 <FaUnlock className="absolute"></FaUnlock>
               </div>
             </div>
+            <input
+              type="range"
+              min="0"
+              max="500"
+              defaultValue={timelineDuration}
+              className="mx-10"
+              onChange={updateTimelineSize}
+            ></input>
           </div>
         </div>
 
@@ -521,12 +553,12 @@ export default function Home() {
         <div
           id="timelineRows"
           ref={timelineRowsElement}
-          className="flex flex-col items-center w-[95vw]"
+          className="flex flex-col items-center w-[95vw] overflow-clip"
         ></div>
         <div
           id="timelineRows"
           ref={timelineAudioRowsElement}
-          className="flex flex-col items-center w-[95vw]"
+          className="flex flex-col items-center w-[95vw] overflow-clip"
         ></div>
       </div>
     </div>
