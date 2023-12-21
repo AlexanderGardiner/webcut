@@ -8,6 +8,7 @@ import { MediaVideo } from "./mediaVideo";
 import Script from "next/script";
 import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
+import { TimelineAudioRow } from "./timelineAudioRow";
 export default function Home() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -16,11 +17,13 @@ export default function Home() {
   let playheadParent = useRef<HTMLDivElement>(null);
   let mediaPool = useRef<HTMLDivElement>(null);
   let timelineRowsElement = useRef<HTMLDivElement>(null);
+  let timelineAudioRowsElement = useRef<HTMLDivElement>(null);
   let snappingEnabledIndicator = useRef<HTMLDivElement>(null);
   let snappingDisabledIndicator = useRef<HTMLDivElement>(null);
   let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
+  let timelineAudioRows: TimelineAudioRow[] = [];
   let mediaVideos: MediaVideo[] = [];
 
   let playing = false;
@@ -52,9 +55,6 @@ export default function Home() {
           timelineRows[i].videos[j].startPoint <= timelineTime &&
           timelineRows[i].videos[j].endPoint >= timelineTime
         ) {
-          console.log(timelineRows[i].videos[j].video.currentTime * 30);
-          console.log(timelineTime - timelineRows[i].videos[j].startPoint);
-
           let centerX =
             timelineRows[i].videos[j].transform.x +
             timelineRows[i].videos[j].transform.width / 2;
@@ -110,6 +110,53 @@ export default function Home() {
       }
     }
 
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        if (
+          timelineAudioRows[i].audios[j].startPoint <= timelineTime &&
+          timelineAudioRows[i].audios[j].endPoint >= timelineTime
+        ) {
+          if (!playing) {
+            timelineAudioRows[i].audios[j].audio.pause();
+            timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
+              (
+                Math.floor(
+                  timelineTime -
+                    timelineAudioRows[i].audios[j].startPoint +
+                    timelineAudioRows[i].audios[j].inPoint
+                ) / fps
+              ).toFixed(3)
+            );
+          }
+          if (playing && timelineAudioRows[i].audios[j].audio.paused) {
+            console.log("test");
+
+            timelineAudioRows[i].audios[j].audio.play();
+            timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
+              (
+                Math.floor(
+                  timelineTime -
+                    timelineAudioRows[i].audios[j].startPoint +
+                    timelineAudioRows[i].audios[j].inPoint
+                ) / fps
+              ).toFixed(3)
+            );
+          }
+
+          if (timelineAudioRows[i].audios[j].audio.paused == true) {
+            canPlay = false;
+          }
+        } else {
+          timelineAudioRows[i].audios[j].audio.pause();
+          timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
+            (Math.floor(timelineAudioRows[i].audios[j].inPoint) / fps).toFixed(
+              3
+            )
+          );
+        }
+      }
+    }
+
     if (playing && canPlay) {
       timelineTime += 1; //(currentTime - previousTime) / fps;
     }
@@ -132,6 +179,7 @@ export default function Home() {
         video,
         mediaPool.current!,
         timelineRows,
+        timelineAudioRows,
         fps,
         timelineDuration,
         parseInt(videoFPS!),
@@ -218,6 +266,7 @@ export default function Home() {
                 video,
                 timelineRows[i].videos[j].transform,
                 timelineRows,
+                timelineAudioRows,
                 i,
                 fps,
                 timelineDuration,
@@ -236,12 +285,21 @@ export default function Home() {
     }
   }
 
-  function deleteVideo() {
+  function deleteElements() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         if (timelineRows[i].videos[j].selected) {
           timelineRows[i].videos[j].removeHTML();
           timelineRows[i].videos.splice(j, 1);
+        }
+      }
+    }
+
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        if (timelineAudioRows[i].audios[j].selected) {
+          timelineAudioRows[i].audios[j].removeHTML();
+          timelineAudioRows[i].audios.splice(j, 1);
         }
       }
     }
@@ -265,6 +323,12 @@ export default function Home() {
       for (let i = 0; i < 3; i++) {
         timelineRows.push(new TimelineRow(i, timelineRowsElement.current!));
       }
+
+      for (let i = 0; i < 3; i++) {
+        timelineAudioRows.push(
+          new TimelineAudioRow(i, timelineAudioRowsElement.current!)
+        );
+      }
       previousTime = performance.now() - 1000 / fps;
       step();
 
@@ -281,7 +345,7 @@ export default function Home() {
           timelineTime -= 1;
         }
         if (e.code == "Delete") {
-          deleteVideo();
+          deleteElements();
         }
         if (e.code == "KeyL") {
           snappingEnabled = !snappingEnabled;
@@ -302,6 +366,14 @@ export default function Home() {
           }
         }
       });
+
+      // window.addEventListener("resize", () => {
+      //   for (let i = timelineRows.length - 1; i >= 0; i--) {
+      //     for (let j = 0; j < timelineRows[i].videos.length; j++) {
+      //       timelineRows[i].videos[j].updatePreviewImage;
+      //     }
+      //   }
+      // });
     }
   }, []);
 
@@ -376,17 +448,11 @@ export default function Home() {
           ref={timelineRowsElement}
           className="flex flex-col items-center w-[95vw]"
         ></div>
-        <div className="flex flex-col items-center w-[95vw]">
-          <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-            Audio Row 1
-          </div>
-          <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-            Audio Row 2
-          </div>
-          <div className="flex flex-col items-center w-full bg-slate-800 my-1 py-5">
-            Audio Row 3
-          </div>
-        </div>
+        <div
+          id="timelineRows"
+          ref={timelineAudioRowsElement}
+          className="flex flex-col items-center w-[95vw]"
+        ></div>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { TimelineAudio } from "./timelineAudio";
+import { TimelineAudioRow } from "./timelineAudioRow";
 import { TimelineRow } from "./timelineRow";
 import { TimelineVideo } from "./timelineVideo";
 import { Transform } from "./transform";
@@ -6,6 +8,7 @@ export class MediaVideo {
   video: HTMLVideoElement;
   previewImage: HTMLImageElement;
   timelineRows: TimelineRow[];
+  timelineAudioRows: TimelineAudioRow[];
   timelineFPS: number;
   timelineDuration: number;
   videoFPS: number;
@@ -15,6 +18,7 @@ export class MediaVideo {
     video: HTMLVideoElement,
     parent: HTMLElement,
     timelineRows: TimelineRow[],
+    timelineAudioRows: TimelineAudioRow[],
     timelineFPS: number,
     timelineDuration: number,
     videoFPS: number,
@@ -24,6 +28,7 @@ export class MediaVideo {
     this.video = video;
     this.previewImage = document.createElement("img");
     this.timelineRows = timelineRows;
+    this.timelineAudioRows = timelineAudioRows;
     let previewImageCanvas = document.createElement("canvas");
     let previewImageCTX = previewImageCanvas.getContext("2d");
     this.timelineFPS = timelineFPS;
@@ -158,8 +163,12 @@ export class MediaVideo {
     }
     if (canAddVideo) {
       let video = document.createElement("video");
+      let audioVideo = document.createElement("video");
       video.src = originalVideo.src;
+      audioVideo.src = originalVideo.src;
+      video.muted = true;
       video.play();
+      audioVideo.play();
 
       video.addEventListener("loadeddata", () => {
         let startPoint =
@@ -182,6 +191,7 @@ export class MediaVideo {
               Math.random() * 2 * Math.PI
             ),
             this.timelineRows,
+            this.timelineAudioRows,
             i,
             this.timelineFPS,
             this.timelineDuration,
@@ -191,6 +201,40 @@ export class MediaVideo {
           )
         );
         video.pause();
+      });
+
+      audioVideo.addEventListener("loadeddata", () => {
+        let startPoint =
+          Math.round(x * this.videoFPS) * (this.timelineFPS / this.videoFPS);
+        let endPoint =
+          startPoint +
+          Math.round(video.duration * this.videoFPS) *
+            (this.timelineFPS / this.videoFPS);
+        let audio = document.createElement("audio");
+        let audioContext = new window.AudioContext();
+        let source = audioContext.createMediaElementSource(audioVideo);
+        let gainNode = audioContext.createGain();
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        source.connect(audioContext.destination);
+        audio.src = source.mediaElement.src;
+        audio.pause();
+        this.timelineAudioRows[i].addAudio(
+          new TimelineAudio(
+            0,
+            startPoint,
+            endPoint,
+            audio,
+            this.timelineRows,
+            this.timelineAudioRows,
+            i,
+            this.timelineFPS,
+            this.timelineDuration,
+            this.snappingEnabled
+          )
+        );
+        audio.pause();
+        audioVideo.pause();
       });
     }
 

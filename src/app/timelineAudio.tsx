@@ -4,74 +4,57 @@ import { TimelineRow } from "./timelineRow";
 import { Transform } from "./transform";
 import { TimelineAudioRow } from "./timelineAudioRow";
 
-export class TimelineVideo {
+export class TimelineAudio {
   inPoint: number;
   startPoint: number;
   endPoint: number;
-  video: HTMLVideoElement;
+  audio: HTMLAudioElement;
   ui: HTMLDivElement;
   timelineRows: TimelineRow[];
   timelineAudioRows: TimelineAudioRow[];
-  timelineRowIndex: number;
-  previewImage: HTMLImageElement;
-  transform: Transform;
+  timelineAudioRowIndex: number;
   leftSelect: HTMLButtonElement;
   rightSelect: HTMLButtonElement;
   timelineFPS: number;
   timelineDuration: number;
   selected: boolean;
-  videoFPS: number;
-  transformUI: any;
-  propertiesUI: HTMLDivElement;
-  transformUIContainer: HTMLDivElement;
   snappingEnabled: boolean;
+  previewImage: HTMLImageElement;
   constructor(
     inPoint: number,
     startPoint: number,
     endPoint: number,
-    video: HTMLVideoElement,
-    transform: Transform,
+    audio: HTMLAudioElement,
     timelineRows: TimelineRow[],
     timelineAudioRows: TimelineAudioRow[],
-    timelineRowIndex: number,
+    timelineAudioRowIndex: number,
     timelineFPS: number,
     timelineDuration: number,
-    videoFPS: number,
-    propertiesUI: HTMLDivElement,
     snappingEnabled: boolean
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
     this.endPoint = endPoint;
-    this.video = video;
+    this.audio = audio;
     this.timelineRows = timelineRows;
     this.timelineAudioRows = timelineAudioRows;
-    this.timelineRowIndex = timelineRowIndex;
+    this.timelineAudioRowIndex = timelineAudioRowIndex;
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
-    this.videoFPS = videoFPS;
-    this.transform = transform;
-    this.propertiesUI = propertiesUI;
     this.snappingEnabled = snappingEnabled;
     this.ui = document.createElement("div");
-    this.transformUIContainer = document.createElement("div");
-
-    this.transformUI = createRoot(this.transformUIContainer).render(
-      <TransformUI transform={this.transform} />
-    );
 
     this.selected = false;
-
+    this.previewImage = document.createElement("img");
     this.ui.className =
       "absolute flex bg-slate-100 py-5 px-0 pointer-events-none";
-    this.previewImage = document.createElement("img");
     const previewImageCanvas = document.createElement("canvas");
-    previewImageCanvas.width = this.video.videoWidth;
-    previewImageCanvas.height = this.video.videoHeight;
+    previewImageCanvas.width = 1600;
+    previewImageCanvas.height = 900;
     const previewImageCTX = previewImageCanvas.getContext("2d");
     if (previewImageCTX) {
-      previewImageCTX.drawImage(
-        video,
+      previewImageCTX.fillStyle = "black";
+      previewImageCTX.fillRect(
         0,
         0,
         previewImageCanvas.width,
@@ -83,18 +66,19 @@ export class TimelineVideo {
       "absolute w-full overflow-hidden h-full pointer-events-auto";
     this.previewImage.setAttribute("style", "top:0px;");
     this.ui.appendChild(this.previewImage);
-    timelineRows[timelineRowIndex].ui.appendChild(this.ui);
+    timelineAudioRows[timelineAudioRowIndex].ui.appendChild(this.ui);
 
     this.ui.setAttribute(
       "style",
       `
             width: ${(
-              (timelineRows[timelineRowIndex].ui.clientWidth *
+              (timelineAudioRows[timelineAudioRowIndex].ui.clientWidth *
                 (this.endPoint - this.startPoint)) /
               (timelineDuration * timelineFPS)
             ).toString()}px; 
             left: ${(
-              (timelineRows[timelineRowIndex].ui.clientWidth * startPoint) /
+              (timelineAudioRows[timelineAudioRowIndex].ui.clientWidth *
+                startPoint) /
               (timelineDuration * timelineFPS)
             ).toString()}px;
             top: 0px;
@@ -135,8 +119,8 @@ export class TimelineVideo {
     this.ui.appendChild(this.leftSelect);
     this.ui.appendChild(this.rightSelect);
 
-    this.video.classList.add("hidden");
-    document.body.appendChild(this.video);
+    this.audio.classList.add("hidden");
+    document.body.appendChild(this.audio);
 
     document.body.addEventListener("keydown", (e) => {
       if (e.code == "Escape") {
@@ -154,12 +138,14 @@ export class TimelineVideo {
       "style",
       `
             width: ${(
-              (this.timelineRows[this.timelineRowIndex].ui.clientWidth *
+              (this.timelineAudioRows[this.timelineAudioRowIndex].ui
+                .clientWidth *
                 (this.endPoint - this.startPoint)) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px; 
             left: ${(
-              (this.timelineRows[this.timelineRowIndex].ui.clientWidth *
+              (this.timelineAudioRows[this.timelineAudioRowIndex].ui
+                .clientWidth *
                 this.startPoint) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px;
@@ -218,56 +204,16 @@ export class TimelineVideo {
       e.preventDefault();
 
       var timelineRowRect =
-        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
+        this.timelineAudioRows[
+          this.timelineAudioRowIndex
+        ].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
       x = Math.floor(x - initalMousePosition);
       if (this.snappingEnabled) {
-        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
-            if (
-              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
-              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].endPoint + 1;
-            }
-
-            if (
-              x + width >
-                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
-              x + width <
-                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].startPoint - width - 1;
-            }
-
-            if (
-              x >
-                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
-              x <
-                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].startPoint;
-            }
-
-            if (
-              x + width >
-                this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
-              x + width <
-                this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].endPoint - width;
-            }
-          }
-        }
-
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
             if (
@@ -275,7 +221,9 @@ export class TimelineVideo {
                 this.timelineAudioRows[i].audios[j].endPoint -
                   this.timelineFPS &&
               x <
-                this.timelineAudioRows[i].audios[j].endPoint + this.timelineFPS
+                this.timelineAudioRows[i].audios[j].endPoint +
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].endPoint + 1;
             }
@@ -286,7 +234,8 @@ export class TimelineVideo {
                   this.timelineFPS &&
               x + width <
                 this.timelineAudioRows[i].audios[j].startPoint +
-                  this.timelineFPS
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].startPoint - width - 1;
             }
@@ -297,7 +246,8 @@ export class TimelineVideo {
                   this.timelineFPS &&
               x <
                 this.timelineAudioRows[i].audios[j].startPoint +
-                  this.timelineFPS
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].startPoint;
             }
@@ -307,9 +257,48 @@ export class TimelineVideo {
                 this.timelineAudioRows[i].audios[j].endPoint -
                   this.timelineFPS &&
               x + width <
-                this.timelineAudioRows[i].audios[j].endPoint + this.timelineFPS
+                this.timelineAudioRows[i].audios[j].endPoint +
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].endPoint - width;
+            }
+          }
+        }
+
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint + 1;
+            }
+
+            if (
+              x + width >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x + width <
+                this.timelineRows[i].videos[j].startPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint - width - 1;
+            }
+
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].startPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint;
+            }
+
+            if (
+              x + width >
+                this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x + width <
+                this.timelineRows[i].videos[j].endPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint - width;
             }
           }
         }
@@ -327,11 +316,10 @@ export class TimelineVideo {
 
   removeHTML() {
     this.ui.remove();
-    this.video.pause();
-    this.video.removeAttribute("src"); // empty source
-    this.video.load();
-    this.video.remove();
-    this.transformUIContainer.remove();
+    this.audio.pause();
+    this.audio.removeAttribute("src"); // empty source
+    this.audio.load();
+    this.audio.remove();
   }
 
   deselect() {
@@ -343,11 +331,9 @@ export class TimelineVideo {
     if (this.selected) {
       this.ui.classList.remove("opacity-100");
       this.ui.classList.add("opacity-50");
-      this.propertiesUI.appendChild(this.transformUIContainer);
     } else {
       this.ui.classList.remove("opacity-50");
       this.ui.classList.add("opacity-100");
-      this.propertiesUI.removeChild(this.transformUIContainer);
     }
   }
 
@@ -362,35 +348,15 @@ export class TimelineVideo {
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       var timelineRowRect =
-        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
+        this.timelineAudioRows[
+          this.timelineAudioRowIndex
+        ].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
       if (this.snappingEnabled) {
-        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
-            if (
-              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
-              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].endPoint + 1;
-            }
-
-            if (
-              x >
-                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
-              x <
-                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].startPoint;
-            }
-          }
-        }
-
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
             if (
@@ -398,7 +364,9 @@ export class TimelineVideo {
                 this.timelineAudioRows[i].audios[j].endPoint -
                   this.timelineFPS &&
               x <
-                this.timelineAudioRows[i].audios[j].endPoint + this.timelineFPS
+                this.timelineAudioRows[i].audios[j].endPoint +
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].endPoint + 1;
             }
@@ -409,9 +377,29 @@ export class TimelineVideo {
                   this.timelineFPS &&
               x <
                 this.timelineAudioRows[i].audios[j].startPoint +
-                  this.timelineFPS
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].startPoint;
+            }
+          }
+        }
+
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint + 1;
+            }
+
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].startPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint;
             }
           }
         }
@@ -422,7 +410,7 @@ export class TimelineVideo {
         x >=
           this.endPoint -
             this.inPoint -
-            this.video.duration * this.timelineFPS &&
+            this.audio.duration * this.timelineFPS &&
         this.inPoint + Math.floor(x - this.startPoint) >= 0
       ) {
         this.inPoint += Math.floor(x - this.startPoint);
@@ -447,36 +435,16 @@ export class TimelineVideo {
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       var timelineRowRect =
-        this.timelineRows[this.timelineRowIndex].ui.getBoundingClientRect();
+        this.timelineAudioRows[
+          this.timelineAudioRowIndex
+        ].ui.getBoundingClientRect();
       var x =
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
       let width = this.endPoint - this.startPoint;
       if (this.snappingEnabled) {
-        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
-          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
-            if (
-              x >
-                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
-              x <
-                this.timelineRows[i].videos[j].startPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].startPoint - 1;
-            }
-
-            if (
-              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
-              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS &&
-              this.timelineRows[i].videos[j] != this
-            ) {
-              x = this.timelineRows[i].videos[j].endPoint;
-            }
-          }
-        }
-
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
             if (
@@ -485,7 +453,8 @@ export class TimelineVideo {
                   this.timelineFPS &&
               x <
                 this.timelineAudioRows[i].audios[j].startPoint +
-                  this.timelineFPS
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].startPoint - 1;
             }
@@ -495,16 +464,37 @@ export class TimelineVideo {
                 this.timelineAudioRows[i].audios[j].endPoint -
                   this.timelineFPS &&
               x <
-                this.timelineAudioRows[i].audios[j].endPoint + this.timelineFPS
+                this.timelineAudioRows[i].audios[j].endPoint +
+                  this.timelineFPS &&
+              this.timelineAudioRows[i].audios[j] != this
             ) {
               x = this.timelineAudioRows[i].audios[j].endPoint;
+            }
+          }
+        }
+
+        for (let i = this.timelineRows.length - 1; i >= 0; i--) {
+          for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            if (
+              x >
+                this.timelineRows[i].videos[j].startPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].startPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].startPoint - 1;
+            }
+
+            if (
+              x > this.timelineRows[i].videos[j].endPoint - this.timelineFPS &&
+              x < this.timelineRows[i].videos[j].endPoint + this.timelineFPS
+            ) {
+              x = this.timelineRows[i].videos[j].endPoint;
             }
           }
         }
       }
       if (
         x - this.startPoint + this.inPoint <=
-          this.video.duration * this.timelineFPS &&
+          this.audio.duration * this.timelineFPS &&
         x > this.startPoint
       ) {
         this.endPoint = Math.floor(x);
