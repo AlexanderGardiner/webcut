@@ -8,6 +8,7 @@ import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
 import { TimelineAudioRow } from "./timelineAudioRow";
 import { TimelineAudio } from "./timelineAudio";
+import Whammy from "react-whammy";
 export default function Home() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -183,10 +184,9 @@ export default function Home() {
   }
 
   async function render() {
-    let frame = 0;
-    //let frames = [];
     let frameRate = 30;
     let lastFrame = 0;
+    let encoder = new Whammy.Video(frameRate, 0.8);
     rendering = true;
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -209,6 +209,23 @@ export default function Home() {
       timelineTime = (frame * fps) / frameRate;
       for (let i = timelineRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineRows[i].videos.length; j++) {
+          previewCTX!.fillStyle = "black";
+          previewCTX!.fillRect(
+            0,
+            0,
+            previewCanvas.current!.width,
+            previewCanvas.current!.height
+          );
+          let centerX =
+            timelineRows[i].videos[j].transform.x +
+            timelineRows[i].videos[j].transform.width / 2;
+          let centerY =
+            timelineRows[i].videos[j].transform.y +
+            timelineRows[i].videos[j].transform.height / 2;
+
+          previewCTX!.translate(centerX, centerY);
+          previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
+          previewCTX!.translate(-centerX, -centerY);
           await setVideoCurrentTime(
             timelineRows[i].videos[j].video,
             (frame -
@@ -223,26 +240,28 @@ export default function Home() {
             timelineRows[i].videos[j].transform.width,
             timelineRows[i].videos[j].transform.height
           );
-          // let imageHref = previewCanvas.current!.toDataURL();
-          // let link = document.createElement("a");
-          // link.style.display = "none";
-          // document.body.appendChild(link);
-          // link.setAttribute("download", frame + ".png");
-          // link.setAttribute(
-          //   "href",
-          //   imageHref.replace("image/png", "image/octet-stream")
-          // );
-          // link.click();
-          // document.body.removeChild(link);
+          previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
         }
       }
 
       for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {}
       }
-    }
 
-    // for (let i=0; i<)
+      encoder.add(previewCanvas.current!);
+    }
+    encoder.compile(false, (output: Blob | MediaSource) => {
+      const video = URL.createObjectURL(output);
+      let downloadLink = document.createElement("a");
+      downloadLink.href = video;
+      downloadLink.download = "Export.mp4";
+
+      downloadLink.textContent = "Download Video";
+
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    });
     rendering = false;
   }
 
