@@ -345,7 +345,7 @@ export default function Home() {
                   timelineAudioRows[i].audios[j].inPoint +
                   1,
                 timelineTime + 1,
-                timelineRows[i].videos[j].endPoint,
+                timelineAudioRows[i].audios[j].endPoint,
                 audio,
                 timelineRows,
                 timelineAudioRows,
