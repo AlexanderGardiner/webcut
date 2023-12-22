@@ -31,64 +31,191 @@ export default function Home() {
   let timelineTime: number = 0;
   let initalized = false;
   let timelineDuration = 50;
+  let rendering = false;
 
   function step() {
     currentTime = performance.now();
+
     playheadDiv.current!.style.left =
       (
         (timelineRows[0].ui.clientWidth * timelineTime) /
           (timelineDuration * fps) -
         3
       ).toString() + "px";
-    let canPlay = true;
-    previewCTX!.clearRect(
-      0,
-      0,
-      previewCanvas.current!.width,
-      previewCanvas.current!.height
-    );
+    if (!rendering) {
+      let canPlay = true;
+      previewCTX!.clearRect(
+        0,
+        0,
+        previewCanvas.current!.width,
+        previewCanvas.current!.height
+      );
 
-    for (let i = timelineRows.length - 1; i >= 0; i--) {
-      for (let j = 0; j < timelineRows[i].videos.length; j++) {
-        if (
-          timelineRows[i].videos[j].startPoint <= timelineTime &&
-          timelineRows[i].videos[j].endPoint >= timelineTime
-        ) {
-          let centerX =
-            timelineRows[i].videos[j].transform.x +
-            timelineRows[i].videos[j].transform.width / 2;
-          let centerY =
-            timelineRows[i].videos[j].transform.y +
-            timelineRows[i].videos[j].transform.height / 2;
+      for (let i = timelineRows.length - 1; i >= 0; i--) {
+        for (let j = 0; j < timelineRows[i].videos.length; j++) {
+          if (
+            timelineRows[i].videos[j].startPoint <= timelineTime &&
+            timelineRows[i].videos[j].endPoint >= timelineTime
+          ) {
+            let centerX =
+              timelineRows[i].videos[j].transform.x +
+              timelineRows[i].videos[j].transform.width / 2;
+            let centerY =
+              timelineRows[i].videos[j].transform.y +
+              timelineRows[i].videos[j].transform.height / 2;
 
-          previewCTX!.translate(centerX, centerY);
-          previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
-          previewCTX!.translate(-centerX, -centerY);
+            previewCTX!.translate(centerX, centerY);
+            previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
+            previewCTX!.translate(-centerX, -centerY);
 
-          if (!playing) {
+            if (!playing) {
+              timelineRows[i].videos[j].video.pause();
+              timelineRows[i].videos[j].video.currentTime = parseFloat(
+                (
+                  Math.floor(
+                    timelineTime -
+                      timelineRows[i].videos[j].startPoint +
+                      timelineRows[i].videos[j].inPoint
+                  ) / fps
+                ).toFixed(3)
+              );
+            }
+            if (playing && timelineRows[i].videos[j].video.paused) {
+              timelineRows[i].videos[j].video.play();
+              timelineRows[i].videos[j].video.currentTime = parseFloat(
+                (
+                  Math.floor(
+                    timelineTime -
+                      timelineRows[i].videos[j].startPoint +
+                      timelineRows[i].videos[j].inPoint
+                  ) / fps
+                ).toFixed(3)
+              );
+            }
+            previewCTX!.drawImage(
+              timelineRows[i].videos[j].video,
+              timelineRows[i].videos[j].transform.x,
+              timelineRows[i].videos[j].transform.y,
+              timelineRows[i].videos[j].transform.width,
+              timelineRows[i].videos[j].transform.height
+            );
+            if (timelineRows[i].videos[j].video.paused == true) {
+              canPlay = false;
+            }
+          } else {
             timelineRows[i].videos[j].video.pause();
             timelineRows[i].videos[j].video.currentTime = parseFloat(
+              (Math.floor(timelineRows[i].videos[j].inPoint) / fps).toFixed(3)
+            );
+          }
+          previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
+        }
+      }
+
+      for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+        for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+          if (
+            timelineAudioRows[i].audios[j].startPoint <= timelineTime &&
+            timelineAudioRows[i].audios[j].endPoint >= timelineTime
+          ) {
+            if (!playing) {
+              timelineAudioRows[i].audios[j].audio.pause();
+              timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
+                (
+                  Math.floor(
+                    timelineTime -
+                      timelineAudioRows[i].audios[j].startPoint +
+                      timelineAudioRows[i].audios[j].inPoint
+                  ) / fps
+                ).toFixed(3)
+              );
+            }
+            if (playing && timelineAudioRows[i].audios[j].audio.paused) {
+              console.log("test");
+
+              timelineAudioRows[i].audios[j].audio.play();
+              timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
+                (
+                  Math.floor(
+                    timelineTime -
+                      timelineAudioRows[i].audios[j].startPoint +
+                      timelineAudioRows[i].audios[j].inPoint
+                  ) / fps
+                ).toFixed(3)
+              );
+            }
+
+            if (timelineAudioRows[i].audios[j].audio.paused == true) {
+              canPlay = false;
+            }
+          } else {
+            timelineAudioRows[i].audios[j].audio.pause();
+            timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
               (
-                Math.floor(
-                  timelineTime -
-                    timelineRows[i].videos[j].startPoint +
-                    timelineRows[i].videos[j].inPoint
-                ) / fps
+                Math.floor(timelineAudioRows[i].audios[j].inPoint) / fps
               ).toFixed(3)
             );
           }
-          if (playing && timelineRows[i].videos[j].video.paused) {
-            timelineRows[i].videos[j].video.play();
-            timelineRows[i].videos[j].video.currentTime = parseFloat(
-              (
-                Math.floor(
-                  timelineTime -
-                    timelineRows[i].videos[j].startPoint +
-                    timelineRows[i].videos[j].inPoint
-                ) / fps
-              ).toFixed(3)
-            );
-          }
+        }
+      }
+
+      if (playing && canPlay) {
+        timelineTime += 1; //(currentTime - previousTime) / fps;
+      }
+    }
+    let actualFPS = 1000 / (currentTime - previousTime);
+    previousTime = currentTime;
+    setTimeout(() => {
+      step(); //requestAnimationFrame(step);
+    }, (1000 / fps) * (actualFPS / fps));
+  }
+
+  async function setVideoCurrentTime(video: HTMLVideoElement, time: number) {
+    await new Promise((resolve) => {
+      const timeUpdateHandler = () => {
+        video.removeEventListener("timeupdate", timeUpdateHandler);
+        console.log("timeupdate");
+        resolve(void 0);
+      };
+      video.addEventListener("timeupdate", timeUpdateHandler);
+      video.currentTime = time;
+    });
+  }
+
+  async function render() {
+    let frame = 0;
+    //let frames = [];
+    let frameRate = 30;
+    let lastFrame = 0;
+    rendering = true;
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        if (timelineRows[i].videos[j].endPoint > lastFrame) {
+          lastFrame = timelineRows[i].videos[j].endPoint;
+        }
+      }
+    }
+
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        if (timelineAudioRows[i].audios[j].endPoint > lastFrame) {
+          lastFrame = timelineAudioRows[i].audios[j].endPoint;
+        }
+      }
+    }
+
+    for (let frame = 0; frame <= lastFrame; frame++) {
+      console.log(frame);
+      timelineTime = (frame * fps) / frameRate;
+      for (let i = timelineRows.length - 1; i >= 0; i--) {
+        for (let j = 0; j < timelineRows[i].videos.length; j++) {
+          await setVideoCurrentTime(
+            timelineRows[i].videos[j].video,
+            (frame -
+              timelineRows[i].videos[j].startPoint +
+              timelineRows[i].videos[j].inPoint) /
+              frameRate
+          );
           previewCTX!.drawImage(
             timelineRows[i].videos[j].video,
             timelineRows[i].videos[j].transform.x,
@@ -96,74 +223,27 @@ export default function Home() {
             timelineRows[i].videos[j].transform.width,
             timelineRows[i].videos[j].transform.height
           );
-          if (timelineRows[i].videos[j].video.paused == true) {
-            canPlay = false;
-          }
-        } else {
-          timelineRows[i].videos[j].video.pause();
-          timelineRows[i].videos[j].video.currentTime = parseFloat(
-            (Math.floor(timelineRows[i].videos[j].inPoint) / fps).toFixed(3)
-          );
+          // let imageHref = previewCanvas.current!.toDataURL();
+          // let link = document.createElement("a");
+          // link.style.display = "none";
+          // document.body.appendChild(link);
+          // link.setAttribute("download", frame + ".png");
+          // link.setAttribute(
+          //   "href",
+          //   imageHref.replace("image/png", "image/octet-stream")
+          // );
+          // link.click();
+          // document.body.removeChild(link);
         }
-        previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
+      }
+
+      for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+        for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {}
       }
     }
 
-    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
-      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
-        if (
-          timelineAudioRows[i].audios[j].startPoint <= timelineTime &&
-          timelineAudioRows[i].audios[j].endPoint >= timelineTime
-        ) {
-          if (!playing) {
-            timelineAudioRows[i].audios[j].audio.pause();
-            timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
-              (
-                Math.floor(
-                  timelineTime -
-                    timelineAudioRows[i].audios[j].startPoint +
-                    timelineAudioRows[i].audios[j].inPoint
-                ) / fps
-              ).toFixed(3)
-            );
-          }
-          if (playing && timelineAudioRows[i].audios[j].audio.paused) {
-            console.log("test");
-
-            timelineAudioRows[i].audios[j].audio.play();
-            timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
-              (
-                Math.floor(
-                  timelineTime -
-                    timelineAudioRows[i].audios[j].startPoint +
-                    timelineAudioRows[i].audios[j].inPoint
-                ) / fps
-              ).toFixed(3)
-            );
-          }
-
-          if (timelineAudioRows[i].audios[j].audio.paused == true) {
-            canPlay = false;
-          }
-        } else {
-          timelineAudioRows[i].audios[j].audio.pause();
-          timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
-            (Math.floor(timelineAudioRows[i].audios[j].inPoint) / fps).toFixed(
-              3
-            )
-          );
-        }
-      }
-    }
-
-    if (playing && canPlay) {
-      timelineTime += 1; //(currentTime - previousTime) / fps;
-    }
-    let actualFPS = 1000 / (currentTime - previousTime);
-    previousTime = currentTime;
-    setTimeout(() => {
-      step(); //requestAnimationFrame(step);
-    }, (1000 / fps) * (actualFPS / fps));
+    // for (let i=0; i<)
+    rendering = false;
   }
 
   function importVideo(file: File) {
@@ -432,6 +512,9 @@ export default function Home() {
         e.stopPropagation();
         if (e.code == "KeyW") {
           makeCut();
+        }
+        if (e.code == "KeyR") {
+          render();
         }
         if (e.code == "ArrowRight") {
           timelineTime += 1;
