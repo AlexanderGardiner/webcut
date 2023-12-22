@@ -8,7 +8,8 @@ import { TimelineVideo } from "./timelineVideo";
 import {} from "react-icons/fa";
 import { TimelineAudioRow } from "./timelineAudioRow";
 import { TimelineAudio } from "./timelineAudio";
-import Whammy from "react-whammy";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
 export default function Home() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -186,7 +187,11 @@ export default function Home() {
   async function render() {
     let frameRate = 30;
     let lastFrame = 0;
-    let encoder = new Whammy.Video(frameRate, 0.8);
+    const ffmpeg = new FFmpeg();
+    await ffmpeg.load();
+    ffmpeg.on("log", ({ message }) => {
+      console.log(message);
+    });
     rendering = true;
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -247,21 +252,61 @@ export default function Home() {
       for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {}
       }
-
-      encoder.add(previewCanvas.current!);
+      await ffmpeg.writeFile(
+        frame.toString() + ".webp",
+        await fetchFile(previewCanvas.current!.toDataURL("image/webp"))
+      );
+      //encoder.add(previewCanvas.current!);
     }
-    encoder.compile(false, (output: Blob | MediaSource) => {
-      const video = URL.createObjectURL(output);
-      let downloadLink = document.createElement("a");
-      downloadLink.href = video;
-      downloadLink.download = "Export.mp4";
+    //encoder.compile(false, async (output: Blob | MediaSource) => {
+    await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
+    const outputVideoData = await ffmpeg.readFile("output.mp4");
+    const video = URL.createObjectURL(
+      new Blob([outputVideoData], { type: "video/mp4" })
+    );
+    let videoElement = document.createElement("video");
+    let videoElement2 = document.createElement("video");
+    let audioElement = timelineAudioRows[0].audios[0].audio.src;
+    videoElement.src = video;
 
-      downloadLink.textContent = "Download Video";
-
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+    console.log("AUDIO ELEMENT");
+    console.log(audioElement);
+    await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
+    ffmpeg.on("log", ({ message }) => {
+      console.log(message);
     });
+    await ffmpeg.writeFile("input.webm", video);
+    await ffmpeg.exec([
+      "-i",
+      "output.mp4",
+      "-i",
+      "audioInput.mp4",
+      "-c:v",
+      "copy",
+      "-c:a",
+      "aac",
+      "-strict",
+      "experimental",
+      "-map",
+      "1:a",
+      "-map",
+      "0:v",
+      "-shortest",
+      "outputWithAudio.mp4",
+    ]);
+    const outputWithAudioData = await ffmpeg.readFile("outputWithAudio.mp4");
+    videoElement2.src = URL.createObjectURL(
+      new Blob([outputWithAudioData], { type: "video/mp4" })
+    );
+    document.body.appendChild(videoElement);
+    document.body.appendChild(videoElement2);
+
+    const a = document.createElement("a");
+    a.href = videoElement.src;
+    a.download = "merged_video.mp4";
+    a.textContent = "Download merged video";
+    document.body.appendChild(a);
+    //});
     rendering = false;
   }
 
