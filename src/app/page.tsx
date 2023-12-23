@@ -260,6 +260,7 @@ export default function Home() {
     }
     //encoder.compile(false, async (output: Blob | MediaSource) => {
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
+    console.log("converted video to mp4");
     const outputVideoData = await ffmpeg.readFile("output.mp4");
     const video = URL.createObjectURL(
       new Blob([outputVideoData], { type: "video/mp4" })
@@ -271,16 +272,50 @@ export default function Home() {
 
     console.log("AUDIO ELEMENT");
     console.log(audioElement);
+
     await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
-    ffmpeg.on("log", ({ message }) => {
-      console.log(message);
-    });
+
     await ffmpeg.writeFile("input.webm", video);
+    console.log("times");
+    console.log(
+      secondsToHHMMSS(timelineAudioRows[0].audios[0].startPoint).toString()
+    );
+    console.log(
+      secondsToHHMMSS(
+        timelineAudioRows[0].audios[0].endPoint -
+          timelineAudioRows[0].audios[0].startPoint
+      ).toString()
+    );
+    console.log(timelineAudioRows[0].audios[0]);
+    await ffmpeg.exec([
+      "-i",
+
+      "audioInput.mp4",
+      "-ss",
+      secondsToHHMMSS(
+        timelineAudioRows[0].audios[0].startPoint / 30
+      ).toString(),
+      "-t",
+      secondsToHHMMSS(
+        (timelineAudioRows[0].audios[0].endPoint -
+          timelineAudioRows[0].audios[0].startPoint) /
+          30
+      ).toString(),
+      "-c:v",
+      "copy",
+      "-c:a",
+      "aac",
+      "-strict",
+      "experimental",
+      "trimmedAudio.mp4",
+    ]);
+    console.log("finished audio cut");
+    const trimmedAudio = await ffmpeg.readFile("trimmedAudio.mp4");
     await ffmpeg.exec([
       "-i",
       "output.mp4",
       "-i",
-      "audioInput.mp4",
+      "trimmedAudio.mp4",
       "-c:v",
       "copy",
       "-c:a",
@@ -291,7 +326,6 @@ export default function Home() {
       "1:a",
       "-map",
       "0:v",
-      "-shortest",
       "outputWithAudio.mp4",
     ]);
     const outputWithAudioData = await ffmpeg.readFile("outputWithAudio.mp4");
@@ -308,6 +342,16 @@ export default function Home() {
     document.body.appendChild(a);
     //});
     rendering = false;
+  }
+  function secondsToHHMMSS(seconds: number) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(remainingSeconds).padStart(2, "0")}`;
   }
 
   function importVideo(file: File) {
