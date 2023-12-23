@@ -249,104 +249,150 @@ export default function Home() {
         }
       }
 
-      for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
-        for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {}
-      }
       await ffmpeg.writeFile(
         frame.toString() + ".webp",
         await fetchFile(previewCanvas.current!.toDataURL("image/webp"))
       );
-      //encoder.add(previewCanvas.current!);
     }
-    //encoder.compile(false, async (output: Blob | MediaSource) => {
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
-    console.log("converted video to mp4");
-    const outputVideoData = await ffmpeg.readFile("output.mp4");
-    const video = URL.createObjectURL(
-      new Blob([outputVideoData], { type: "video/mp4" })
-    );
-    let videoElement = document.createElement("video");
-    let videoElement2 = document.createElement("video");
-    let audioElement = timelineAudioRows[0].audios[0].audio.src;
-    videoElement.src = video;
-
-    console.log("AUDIO ELEMENT");
-    console.log(audioElement);
-
-    await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
-
-    await ffmpeg.writeFile("input.webm", video);
-    console.log("times");
-    console.log(
-      secondsToHHMMSS(timelineAudioRows[0].audios[0].startPoint).toString()
-    );
-    console.log(
-      secondsToHHMMSS(
-        timelineAudioRows[0].audios[0].endPoint -
-          timelineAudioRows[0].audios[0].startPoint
-      ).toString()
-    );
-    console.log(timelineAudioRows[0].audios[0]);
+    await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
     await ffmpeg.exec([
       "-i",
-
-      "audioInput.mp4",
-      "-ss",
-      secondsToHHMMSS(
-        timelineAudioRows[0].audios[0].startPoint / 30
-      ).toString(),
-      "-t",
-      secondsToHHMMSS(
-        (timelineAudioRows[0].audios[0].endPoint -
-          timelineAudioRows[0].audios[0].startPoint) /
-          30
-      ).toString(),
+      "input.mp4",
+      "-f",
+      "lavfi",
+      "-i",
+      "anullsrc",
       "-c:v",
       "copy",
       "-c:a",
       "aac",
       "-strict",
       "experimental",
-      "trimmedAudio.mp4",
-    ]);
-    console.log("finished audio cut");
-    const trimmedAudio = await ffmpeg.readFile("trimmedAudio.mp4");
-    await ffmpeg.exec([
-      "-i",
+      "-shortest",
       "output.mp4",
-      "-i",
-      "trimmedAudio.mp4",
-      "-c:v",
-      "copy",
-      "-c:a",
-      "aac",
-      "-strict",
-      "experimental",
-      "-map",
-      "1:a",
-      "-map",
-      "0:v",
-      "outputWithAudio.mp4",
     ]);
-    const outputWithAudioData = await ffmpeg.readFile("outputWithAudio.mp4");
-    videoElement2.src = URL.createObjectURL(
-      new Blob([outputWithAudioData], { type: "video/mp4" })
-    );
-    document.body.appendChild(videoElement);
-    document.body.appendChild(videoElement2);
+    console.log("converted video to mp4");
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        let audioElement = timelineAudioRows[i].audios[j].audio.src;
+        await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
+        console.log(
+          secondsToHHMMSS(
+            timelineAudioRows[i].audios[j].inPoint / 30
+          ).toString()
+        );
+        console.log(
+          secondsToHHMMSS(
+            (timelineAudioRows[i].audios[j].endPoint -
+              timelineAudioRows[i].audios[j].startPoint) /
+              30
+          ).toString()
+        );
+        await ffmpeg.exec([
+          "-i",
 
+          "audioInput.mp4",
+          "-ss",
+          secondsToHHMMSS(
+            timelineAudioRows[i].audios[j].inPoint / 30
+          ).toString(),
+          "-t",
+          secondsToHHMMSS(
+            (timelineAudioRows[i].audios[j].endPoint -
+              timelineAudioRows[i].audios[j].startPoint) /
+              30
+          ).toString(),
+          "-c:v",
+          "copy",
+          "-c:a",
+          "aac",
+          "-strict",
+          "experimental",
+          "trimmedAudio.mp4",
+        ]);
+        console.log("finished audio cut");
+        await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
+        const videoElement1 = document.createElement("video");
+        videoElement1.src = URL.createObjectURL(
+          new Blob([await ffmpeg.readFile("trimmedAudio.mp4")], {
+            type: "video/mp4",
+          })
+        );
+        document.body.appendChild(videoElement1);
+        console.log(
+          secondsToHHMMSS(
+            timelineAudioRows[i].audios[j].startPoint / 30
+          ).toString()
+        );
+        // await ffmpeg.exec([
+        //   "-i",
+        //   "input.mp4",
+        //   "-itsoffset",
+        //   secondsToHHMMSS(
+        //     timelineAudioRows[i].audios[j].startPoint / 30
+        //   ).toString(),
+        //   "-i",
+        //   "trimmedAudio.mp4",
+        //   "-c:v",
+        //   "copy",
+        //   "-c:a",
+        //   "aac",
+        //   "-ac",
+        //   "2",
+        //   "-strict",
+        //   "experimental",
+        //   "-map",
+        //   "1:a",
+        //   "-map",
+        //   "0:v",
+        //   "-map",
+        //   "0:a",
+        //   "output.mp4",
+        // ]);
+        console.log(
+          secondsToHHMMSS(
+            timelineAudioRows[i].audios[j].startPoint / 30
+          ).toString()
+        );
+        await ffmpeg.exec([
+          "-i",
+          "input.mp4",
+          "-i",
+          "trimmedAudio.mp4",
+          "-filter_complex",
+          "[0:a][1:a]amix=inputs=2[out]",
+          "-map",
+          "[out]",
+          "-map",
+          "0:v",
+          "output.mp4",
+        ]);
+        const videoElement2 = document.createElement("video");
+        videoElement2.src = URL.createObjectURL(
+          new Blob([await ffmpeg.readFile("output.mp4")], { type: "video/mp4" })
+        );
+        document.body.appendChild(videoElement2);
+      }
+    }
+
+    const finalOutput = await ffmpeg.readFile("output.mp4");
+    const videoElement = document.createElement("video");
     const a = document.createElement("a");
-    a.href = videoElement.src;
+    a.href = URL.createObjectURL(
+      new Blob([finalOutput], { type: "video/mp4" })
+    );
+    videoElement.src = a.href;
     a.download = "merged_video.mp4";
     a.textContent = "Download merged video";
     document.body.appendChild(a);
-    //});
+    document.body.appendChild(videoElement);
     rendering = false;
   }
   function secondsToHHMMSS(seconds: number) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
+    const remainingSeconds = seconds % 60;
 
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
