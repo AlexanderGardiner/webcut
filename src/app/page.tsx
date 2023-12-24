@@ -174,16 +174,19 @@ export default function Home() {
     await new Promise((resolve) => {
       const timeUpdateHandler = () => {
         video.removeEventListener("timeupdate", timeUpdateHandler);
+        console.log("time updated");
         resolve(void 0);
       };
       video.addEventListener("timeupdate", timeUpdateHandler);
       video.currentTime = time;
+      console.log(time);
     });
   }
 
   async function render() {
     let frameRate = 30;
     let lastFrame = 0;
+    previewCTX!.fillStyle = "black";
     const ffmpeg = new FFmpeg();
     await ffmpeg.load();
     ffmpeg.on("log", ({ message }) => {
@@ -205,42 +208,47 @@ export default function Home() {
         }
       }
     }
-
+    console.log(timelineRows);
     for (let frame = 0; frame <= lastFrame; frame++) {
       timelineTime = (frame * fps) / frameRate;
+      previewCTX!.fillRect(
+        0,
+        0,
+        previewCanvas.current!.width,
+        previewCanvas.current!.height
+      );
       for (let i = timelineRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineRows[i].videos.length; j++) {
-          previewCTX!.fillStyle = "black";
-          previewCTX!.fillRect(
-            0,
-            0,
-            previewCanvas.current!.width,
-            previewCanvas.current!.height
-          );
-          let centerX =
-            timelineRows[i].videos[j].transform.x +
-            timelineRows[i].videos[j].transform.width / 2;
-          let centerY =
-            timelineRows[i].videos[j].transform.y +
-            timelineRows[i].videos[j].transform.height / 2;
+          if (
+            timelineRows[i].videos[j].startPoint <= frame &&
+            timelineRows[i].videos[j].endPoint >= frame
+          ) {
+            let centerX =
+              timelineRows[i].videos[j].transform.x +
+              timelineRows[i].videos[j].transform.width / 2;
+            let centerY =
+              timelineRows[i].videos[j].transform.y +
+              timelineRows[i].videos[j].transform.height / 2;
 
-          previewCTX!.translate(centerX, centerY);
-          previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
-          previewCTX!.translate(-centerX, -centerY);
-          await setVideoCurrentTime(
-            timelineRows[i].videos[j].video,
-            (frame -
-              timelineRows[i].videos[j].startPoint +
-              timelineRows[i].videos[j].inPoint) /
-              frameRate
-          );
-          previewCTX!.drawImage(
-            timelineRows[i].videos[j].video,
-            timelineRows[i].videos[j].transform.x,
-            timelineRows[i].videos[j].transform.y,
-            timelineRows[i].videos[j].transform.width,
-            timelineRows[i].videos[j].transform.height
-          );
+            previewCTX!.translate(centerX, centerY);
+            previewCTX!.rotate(timelineRows[i].videos[j].transform.rotation);
+            previewCTX!.translate(-centerX, -centerY);
+            await setVideoCurrentTime(
+              timelineRows[i].videos[j].video,
+              (frame -
+                timelineRows[i].videos[j].startPoint +
+                timelineRows[i].videos[j].inPoint) /
+                frameRate
+            );
+            previewCTX!.drawImage(
+              timelineRows[i].videos[j].video,
+              timelineRows[i].videos[j].transform.x,
+              timelineRows[i].videos[j].transform.y,
+              timelineRows[i].videos[j].transform.width,
+              timelineRows[i].videos[j].transform.height
+            );
+            console.log("image drawn");
+          }
           previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
         }
       }
@@ -251,6 +259,13 @@ export default function Home() {
       );
     }
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
+    const videoElement3 = document.createElement("video");
+    videoElement3.src = URL.createObjectURL(
+      new Blob([await ffmpeg.readFile("output.mp4")], {
+        type: "video/mp4",
+      })
+    );
+    document.body.appendChild(videoElement3);
     await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
     await ffmpeg.exec([
       "-i",
@@ -268,6 +283,13 @@ export default function Home() {
       "-shortest",
       "output.mp4",
     ]);
+    const videoElement4 = document.createElement("video");
+    videoElement4.src = URL.createObjectURL(
+      new Blob([await ffmpeg.readFile("output.mp4")], {
+        type: "video/mp4",
+      })
+    );
+    document.body.appendChild(videoElement4);
     for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
         let audioElement = timelineAudioRows[i].audios[j].audio.src;
@@ -357,7 +379,6 @@ export default function Home() {
 
     let media = URL.createObjectURL(file);
     video.src = media;
-
     let videoFPS = window.prompt("Input the FPS of the video", "60");
     mediaVideos.push(
       new MediaVideo(
@@ -472,15 +493,11 @@ export default function Home() {
           timelineRows[i].videos[j].selected
         ) {
           let video = document.createElement("video");
-          let blob = await fetch(timelineRows[i].videos[j].video.src).then(
-            (r) => r.blob()
-          );
-          let newSrc = URL.createObjectURL(blob);
-          video.src = newSrc;
+          video.src = timelineRows[i].videos[j].video.src;
+          video.muted = true;
           video.play();
-
           video.addEventListener("loadeddata", () => {
-            timelineRows[i].videos.push(
+            timelineRows[i].addVideo(
               new TimelineVideo(
                 timelineTime -
                   timelineRows[i].videos[j].startPoint +
@@ -500,6 +517,7 @@ export default function Home() {
                 snappingEnabled
               )
             );
+            console.log(timelineRows[i]);
             timelineRows[i].videos[j].endPoint = timelineTime;
 
             timelineRows[i].videos[j].updatePreviewImage();
@@ -710,8 +728,9 @@ export default function Home() {
             </div>
             <input
               type="range"
-              min="0"
-              max="500"
+              min="0.01"
+              max="3600"
+              step="0.01"
               defaultValue={timelineDuration}
               className="mx-10"
               onChange={updateTimelineSize}
