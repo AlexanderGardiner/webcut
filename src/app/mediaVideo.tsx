@@ -171,8 +171,6 @@ export class MediaVideo {
       video.src = originalVideo.src;
       audioVideo.src = originalVideo.src;
       video.muted = true;
-      video.play();
-      audioVideo.play();
 
       video.addEventListener("loadeddata", () => {
         let startPoint =
@@ -204,6 +202,7 @@ export class MediaVideo {
             this.snappingEnabled
           )
         );
+
         video.pause();
       });
 
@@ -240,6 +239,8 @@ export class MediaVideo {
         audio.pause();
         audioVideo.pause();
       });
+      video.play();
+      audioVideo.play();
     }
 
     tempVideo.removeAttribute("src");
