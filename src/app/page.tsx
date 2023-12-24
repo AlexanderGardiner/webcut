@@ -160,13 +160,13 @@ export default function Home() {
       }
 
       if (playing && canPlay) {
-        timelineTime += 1; //(currentTime - previousTime) / fps;
+        timelineTime += 1;
       }
     }
     let actualFPS = 1000 / (currentTime - previousTime);
     previousTime = currentTime;
     setTimeout(() => {
-      step(); //requestAnimationFrame(step);
+      step();
     }, (1000 / fps) * (actualFPS / fps));
   }
 
@@ -174,18 +174,20 @@ export default function Home() {
     await new Promise((resolve) => {
       const timeUpdateHandler = () => {
         video.removeEventListener("timeupdate", timeUpdateHandler);
-        console.log("time updated");
         resolve(void 0);
       };
       video.addEventListener("timeupdate", timeUpdateHandler);
       video.currentTime = time;
-      console.log(time);
     });
   }
 
   async function render() {
     let frameRate = 30;
     let lastFrame = 0;
+    let canvas = previewCanvas.current!;
+    let canvasWidth = canvas.width;
+    let canvasHeight = canvas.height;
+
     previewCTX!.fillStyle = "black";
     const ffmpeg = new FFmpeg();
     await ffmpeg.load();
@@ -208,15 +210,9 @@ export default function Home() {
         }
       }
     }
-    console.log(timelineRows);
     for (let frame = 0; frame <= lastFrame; frame++) {
       timelineTime = (frame * fps) / frameRate;
-      previewCTX!.fillRect(
-        0,
-        0,
-        previewCanvas.current!.width,
-        previewCanvas.current!.height
-      );
+      previewCTX!.fillRect(0, 0, canvasWidth, canvasHeight);
       for (let i = timelineRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineRows[i].videos.length; j++) {
           if (
@@ -247,7 +243,6 @@ export default function Home() {
               timelineRows[i].videos[j].transform.width,
               timelineRows[i].videos[j].transform.height
             );
-            console.log("image drawn");
           }
           previewCTX!.setTransform(1, 0, 0, 1, 0, 0);
         }
@@ -255,17 +250,12 @@ export default function Home() {
 
       await ffmpeg.writeFile(
         frame.toString() + ".webp",
-        await fetchFile(previewCanvas.current!.toDataURL("image/webp"))
+        await fetchFile(canvas.toDataURL("image/webp"))
       );
     }
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
-    const videoElement3 = document.createElement("video");
-    videoElement3.src = URL.createObjectURL(
-      new Blob([await ffmpeg.readFile("output.mp4")], {
-        type: "video/mp4",
-      })
-    );
-    document.body.appendChild(videoElement3);
+    console.log("FRAMES COMPILED");
+    alert("FRAMES COMPILED");
     await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
     await ffmpeg.exec([
       "-i",
@@ -283,13 +273,8 @@ export default function Home() {
       "-shortest",
       "output.mp4",
     ]);
-    const videoElement4 = document.createElement("video");
-    videoElement4.src = URL.createObjectURL(
-      new Blob([await ffmpeg.readFile("output.mp4")], {
-        type: "video/mp4",
-      })
-    );
-    document.body.appendChild(videoElement4);
+    console.log("STARTING AUDIO PROCESSING");
+    alert("STARTING AUDIO PROCESSING");
     for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
         let audioElement = timelineAudioRows[i].audios[j].audio.src;
@@ -317,13 +302,6 @@ export default function Home() {
           "trimmedAudio.mp4",
         ]);
         await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
-        const videoElement1 = document.createElement("video");
-        videoElement1.src = URL.createObjectURL(
-          new Blob([await ffmpeg.readFile("trimmedAudio.mp4")], {
-            type: "video/mp4",
-          })
-        );
-        document.body.appendChild(videoElement1);
 
         await ffmpeg.exec([
           "-i",
@@ -342,11 +320,6 @@ export default function Home() {
           "0:v",
           "output.mp4",
         ]);
-        const videoElement2 = document.createElement("video");
-        videoElement2.src = URL.createObjectURL(
-          new Blob([await ffmpeg.readFile("output.mp4")], { type: "video/mp4" })
-        );
-        document.body.appendChild(videoElement2);
       }
     }
 
@@ -517,7 +490,6 @@ export default function Home() {
                 snappingEnabled
               )
             );
-            console.log(timelineRows[i]);
             timelineRows[i].videos[j].endPoint = timelineTime;
 
             timelineRows[i].videos[j].updatePreviewImage();
