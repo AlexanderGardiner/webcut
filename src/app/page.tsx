@@ -133,8 +133,6 @@ export default function Home() {
               );
             }
             if (playing && timelineAudioRows[i].audios[j].audio.paused) {
-              console.log("test");
-
               timelineAudioRows[i].audios[j].audio.play();
               timelineAudioRows[i].audios[j].audio.currentTime = parseFloat(
                 (
@@ -176,7 +174,6 @@ export default function Home() {
     await new Promise((resolve) => {
       const timeUpdateHandler = () => {
         video.removeEventListener("timeupdate", timeUpdateHandler);
-        console.log("timeupdate");
         resolve(void 0);
       };
       video.addEventListener("timeupdate", timeUpdateHandler);
@@ -210,7 +207,6 @@ export default function Home() {
     }
 
     for (let frame = 0; frame <= lastFrame; frame++) {
-      console.log(frame);
       timelineTime = (frame * fps) / frameRate;
       for (let i = timelineRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -272,23 +268,10 @@ export default function Home() {
       "-shortest",
       "output.mp4",
     ]);
-    console.log("converted video to mp4");
     for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
         let audioElement = timelineAudioRows[i].audios[j].audio.src;
         await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
-        console.log(
-          secondsToHHMMSS(
-            timelineAudioRows[i].audios[j].inPoint / 30
-          ).toString()
-        );
-        console.log(
-          secondsToHHMMSS(
-            (timelineAudioRows[i].audios[j].endPoint -
-              timelineAudioRows[i].audios[j].startPoint) /
-              30
-          ).toString()
-        );
         await ffmpeg.exec([
           "-i",
 
@@ -311,7 +294,6 @@ export default function Home() {
           "experimental",
           "trimmedAudio.mp4",
         ]);
-        console.log("finished audio cut");
         await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
         const videoElement1 = document.createElement("video");
         videoElement1.src = URL.createObjectURL(
@@ -320,48 +302,18 @@ export default function Home() {
           })
         );
         document.body.appendChild(videoElement1);
-        console.log(
-          secondsToHHMMSS(
-            timelineAudioRows[i].audios[j].startPoint / 30
-          ).toString()
-        );
-        // await ffmpeg.exec([
-        //   "-i",
-        //   "input.mp4",
-        //   "-itsoffset",
-        //   secondsToHHMMSS(
-        //     timelineAudioRows[i].audios[j].startPoint / 30
-        //   ).toString(),
-        //   "-i",
-        //   "trimmedAudio.mp4",
-        //   "-c:v",
-        //   "copy",
-        //   "-c:a",
-        //   "aac",
-        //   "-ac",
-        //   "2",
-        //   "-strict",
-        //   "experimental",
-        //   "-map",
-        //   "1:a",
-        //   "-map",
-        //   "0:v",
-        //   "-map",
-        //   "0:a",
-        //   "output.mp4",
-        // ]);
-        console.log(
-          secondsToHHMMSS(
-            timelineAudioRows[i].audios[j].startPoint / 30
-          ).toString()
-        );
+
         await ffmpeg.exec([
           "-i",
           "input.mp4",
           "-i",
           "trimmedAudio.mp4",
           "-filter_complex",
-          "[0:a][1:a]amix=inputs=2[out]",
+          `[1:a]adelay=${
+            (timelineAudioRows[i].audios[j].startPoint / 30) * 1000
+          }|${
+            (timelineAudioRows[i].audios[j].startPoint / 30) * 1000
+          }[delayed];[delayed][0:a]amix=inputs=2[out]`,
           "-map",
           "[out]",
           "-map",
@@ -593,7 +545,6 @@ export default function Home() {
 
             timelineAudioRows[i].audios[j].updatePreviewImage();
             audio.pause();
-            console.log(timelineAudioRows[i]);
           });
         }
       }
