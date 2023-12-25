@@ -21,6 +21,8 @@ export default function Home() {
   let timelineAudioRowsElement = useRef<HTMLDivElement>(null);
   let snappingEnabledIndicator = useRef<HTMLDivElement>(null);
   let snappingDisabledIndicator = useRef<HTMLDivElement>(null);
+  let timelineDurationSlider = useRef<HTMLInputElement>(null);
+  let timelineDurationInput = useRef<HTMLInputElement>(null);
   let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
@@ -439,7 +441,16 @@ export default function Home() {
   }
 
   function updateTimelineSize(event: ChangeEvent<HTMLInputElement>) {
+    console.log("update", timelineDuration);
+    let targetElement = event.target as HTMLInputElement;
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
+    console.log("update", timelineDuration);
+    if (targetElement != timelineDurationSlider.current!) {
+      timelineDurationSlider.current!.value = timelineDuration.toString();
+    } else {
+      timelineDurationInput.current!.value = timelineDuration.toString();
+    }
+
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         timelineRows[i].videos[j].setTimelineDuration(timelineDuration);
@@ -704,7 +715,17 @@ export default function Home() {
               max="3600"
               step="0.01"
               defaultValue={timelineDuration}
+              ref={timelineDurationSlider}
               className="mx-10"
+              onChange={updateTimelineSize}
+            ></input>
+            <input
+              type="number"
+              min="0.01"
+              max="3600"
+              defaultValue={timelineDuration.toString()}
+              ref={timelineDurationInput}
+              className="mx-10 text-black"
               onChange={updateTimelineSize}
             ></input>
           </div>
