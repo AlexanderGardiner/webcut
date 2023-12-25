@@ -23,6 +23,7 @@ export default function Home() {
   let snappingDisabledIndicator = useRef<HTMLDivElement>(null);
   let timelineDurationSlider = useRef<HTMLInputElement>(null);
   let timelineDurationInput = useRef<HTMLInputElement>(null);
+  let playheadOffsetSlider = useRef<HTMLInputElement>(null);
   let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
@@ -36,13 +37,15 @@ export default function Home() {
   let initalized = false;
   let timelineDuration = 50;
   let rendering = false;
+  let playheadScalingOffset = 0;
 
   function step() {
     currentTime = performance.now();
 
     playheadDiv.current!.style.left =
       (
-        (timelineRows[0].ui.clientWidth * timelineTime) /
+        (timelineRows[0].ui.clientWidth *
+          (timelineTime + playheadScalingOffset)) /
           (timelineDuration * fps) -
         3
       ).toString() + "px";
@@ -365,7 +368,8 @@ export default function Home() {
         timelineDuration,
         parseInt(videoFPS!),
         propertiesUI.current!,
-        snappingEnabled
+        snappingEnabled,
+        playheadScalingOffset
       )
     );
   }
@@ -383,9 +387,10 @@ export default function Home() {
     var rect = timelineRows[0].ui.getBoundingClientRect();
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      let tempTimelineTime = Math.round(
-        (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
-      );
+      let tempTimelineTime =
+        Math.round(
+          (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
+        ) - playheadScalingOffset;
       if (snappingEnabled && !playing) {
         for (let i = timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -443,14 +448,52 @@ export default function Home() {
   function updateTimelineSize(event: ChangeEvent<HTMLInputElement>) {
     console.log("update", timelineDuration);
     let targetElement = event.target as HTMLInputElement;
+    let playheadRect = playheadDiv.current!.getBoundingClientRect();
+    let playheadContainerRect = playheadParent.current!.getBoundingClientRect();
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
+    playheadScalingOffset = Math.ceil(
+      (timelineDuration *
+        fps *
+        (playheadRect.left - playheadContainerRect.left)) /
+        playheadContainerRect.width -
+        timelineTime
+    );
+
+    console.log(playheadScalingOffset);
+
     console.log("update", timelineDuration);
     if (targetElement != timelineDurationSlider.current!) {
       timelineDurationSlider.current!.value = timelineDuration.toString();
     } else {
       timelineDurationInput.current!.value = timelineDuration.toString();
     }
+    playheadOffsetSlider.current!.value = playheadScalingOffset.toString();
+    updateTimelineDurations();
+    updatePlayheadScalingOffsets();
+    updateElementSizes();
+  }
+  function updatePlayheadScalingOffsets() {
+    for (let i = timelineRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineRows[i].videos.length; j++) {
+        timelineRows[i].videos[j].setPlayheadScalingOffset(
+          playheadScalingOffset
+        );
+      }
+    }
 
+    for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
+      for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        timelineAudioRows[i].audios[j].setPlayheadScalingOffset(
+          playheadScalingOffset
+        );
+      }
+    }
+    for (let i = mediaVideos.length - 1; i >= 0; i--) {
+      mediaVideos[i].setPlayheadScalingOffset(playheadScalingOffset);
+    }
+  }
+
+  function updateTimelineDurations() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
         timelineRows[i].videos[j].setTimelineDuration(timelineDuration);
@@ -465,7 +508,6 @@ export default function Home() {
     for (let i = mediaVideos.length - 1; i >= 0; i--) {
       mediaVideos[i].setTimelineDuration(timelineDuration);
     }
-    updateElementSizes();
   }
 
   async function makeCut() {
@@ -498,7 +540,8 @@ export default function Home() {
                 timelineDuration,
                 timelineRows[i].videos[j].videoFPS,
                 propertiesUI.current!,
-                snappingEnabled
+                snappingEnabled,
+                playheadScalingOffset
               )
             );
             timelineRows[i].videos[j].endPoint = timelineTime;
@@ -539,7 +582,8 @@ export default function Home() {
                 i,
                 fps,
                 timelineDuration,
-                snappingEnabled
+                snappingEnabled,
+                playheadScalingOffset
               )
             );
             timelineAudioRows[i].audios[j].endPoint = timelineTime;
@@ -665,6 +709,13 @@ export default function Home() {
     }
   }, []);
 
+  function updatePlayheadOffset(event: ChangeEvent<HTMLInputElement>) {
+    playheadScalingOffset = parseFloat(event.target.value);
+    updateTimelineDurations();
+    updatePlayheadScalingOffsets();
+    updateElementSizes();
+  }
+
   return (
     <div>
       <div className="grid grid-cols-5 gap-4 max-w-full my-5 mx-5">
@@ -716,7 +767,7 @@ export default function Home() {
               step="0.01"
               defaultValue={timelineDuration}
               ref={timelineDurationSlider}
-              className="mx-10"
+              className="ml-10"
               onChange={updateTimelineSize}
             ></input>
             <input
@@ -725,8 +776,17 @@ export default function Home() {
               max="3600"
               defaultValue={timelineDuration.toString()}
               ref={timelineDurationInput}
-              className="mx-10 text-black"
+              className="mx-10 text-black w-10"
               onChange={updateTimelineSize}
+            ></input>
+            <input
+              type="range"
+              min="0.01"
+              max="3600"
+              step="0.01"
+              defaultValue={playheadScalingOffset.toString()}
+              ref={playheadOffsetSlider}
+              onChange={updatePlayheadOffset}
             ></input>
           </div>
         </div>

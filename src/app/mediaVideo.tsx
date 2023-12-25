@@ -14,6 +14,7 @@ export class MediaVideo {
   videoFPS: number;
   propertiesUI: HTMLDivElement;
   snappingEnabled: boolean;
+  playheadScalingOffset: number;
   constructor(
     video: HTMLVideoElement,
     parent: HTMLElement,
@@ -23,7 +24,8 @@ export class MediaVideo {
     timelineDuration: number,
     videoFPS: number,
     propertiesUI: HTMLDivElement,
-    snappingEnabled: boolean
+    snappingEnabled: boolean,
+    playheadScalingOffset: number
   ) {
     this.video = video;
     this.previewImage = document.createElement("img");
@@ -36,6 +38,7 @@ export class MediaVideo {
     this.videoFPS = videoFPS;
     this.propertiesUI = propertiesUI;
     this.snappingEnabled = snappingEnabled;
+    this.playheadScalingOffset = playheadScalingOffset;
     this.video.addEventListener("loadeddata", () => {
       previewImageCanvas.width = this.video.videoWidth;
       previewImageCanvas.height = this.video.videoHeight;
@@ -147,6 +150,10 @@ export class MediaVideo {
     this.timelineDuration = timelineDuration;
   }
 
+  setPlayheadScalingOffset(playheadScalingOffset: number) {
+    this.playheadScalingOffset = playheadScalingOffset;
+  }
+
   endDragVideo(
     e: MouseEvent,
     tempVideo: HTMLImageElement,
@@ -154,7 +161,9 @@ export class MediaVideo {
     originalVideo: HTMLVideoElement
   ) {
     var rect = this.timelineRows[i].ui.getBoundingClientRect();
-    var x = (this.timelineDuration * (e.clientX - rect.left)) / rect.width;
+    var x =
+      (this.timelineDuration * (e.clientX - rect.left)) / rect.width -
+      this.playheadScalingOffset / this.timelineFPS;
     let canAddVideo = true;
     for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
       if (
@@ -164,6 +173,12 @@ export class MediaVideo {
       ) {
         canAddVideo = false;
       }
+    }
+    if (x < 0) {
+      canAddVideo = false;
+      console.log(this.playheadScalingOffset);
+      console.log(this.timelineRows);
+      console.log(x);
     }
     if (canAddVideo) {
       let video = document.createElement("video");
@@ -199,11 +214,13 @@ export class MediaVideo {
             this.timelineDuration,
             this.videoFPS,
             this.propertiesUI,
-            this.snappingEnabled
+            this.snappingEnabled,
+            this.playheadScalingOffset
           )
         );
 
         video.pause();
+        console.log(this.timelineRows);
       });
 
       audioVideo.addEventListener("loadeddata", () => {
@@ -233,7 +250,8 @@ export class MediaVideo {
             i,
             this.timelineFPS,
             this.timelineDuration,
-            this.snappingEnabled
+            this.snappingEnabled,
+            this.playheadScalingOffset
           )
         );
         audio.pause();

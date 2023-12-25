@@ -20,6 +20,7 @@ export class TimelineAudio {
   selected: boolean;
   snappingEnabled: boolean;
   previewImage: HTMLImageElement;
+  playheadScalingOffset: any;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -30,7 +31,8 @@ export class TimelineAudio {
     timelineAudioRowIndex: number,
     timelineFPS: number,
     timelineDuration: number,
-    snappingEnabled: boolean
+    snappingEnabled: boolean,
+    playheadScalingOffset: number
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -42,6 +44,7 @@ export class TimelineAudio {
     this.timelineFPS = timelineFPS;
     this.timelineDuration = timelineDuration;
     this.snappingEnabled = snappingEnabled;
+    this.playheadScalingOffset = playheadScalingOffset;
     this.ui = document.createElement("div");
 
     this.selected = false;
@@ -68,22 +71,7 @@ export class TimelineAudio {
     this.ui.appendChild(this.previewImage);
     timelineAudioRows[timelineAudioRowIndex].ui.appendChild(this.ui);
 
-    this.ui.setAttribute(
-      "style",
-      `
-            width: ${(
-              (timelineAudioRows[timelineAudioRowIndex].ui.clientWidth *
-                (this.endPoint - this.startPoint)) /
-              (timelineDuration * timelineFPS)
-            ).toString()}px; 
-            left: ${(
-              (timelineAudioRows[timelineAudioRowIndex].ui.clientWidth *
-                startPoint) /
-              (timelineDuration * timelineFPS)
-            ).toString()}px;
-            top: 0px;
-        `
-    );
+    this.updatePreviewImage();
     this.leftSelect = document.createElement("button");
     this.leftSelect.className =
       "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
@@ -133,6 +121,10 @@ export class TimelineAudio {
     this.snappingEnabled = snappingEnabled;
   }
 
+  setPlayheadScalingOffset(playheadScalingOffset: number) {
+    this.playheadScalingOffset = playheadScalingOffset;
+  }
+
   updatePreviewImage() {
     this.ui.setAttribute(
       "style",
@@ -146,7 +138,7 @@ export class TimelineAudio {
             left: ${(
               (this.timelineAudioRows[this.timelineAudioRowIndex].ui
                 .clientWidth *
-                this.startPoint) /
+                (this.startPoint + this.playheadScalingOffset)) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px;
             top: 0px;
@@ -214,7 +206,8 @@ export class TimelineAudio {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
+          this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       x = Math.floor(x - initalMousePosition);
       if (this.snappingEnabled) {
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
@@ -358,7 +351,8 @@ export class TimelineAudio {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
+          this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       if (this.snappingEnabled) {
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
@@ -446,7 +440,8 @@ export class TimelineAudio {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth;
+          this.timelineAudioRows[this.timelineAudioRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       let width = this.endPoint - this.startPoint;
       if (this.snappingEnabled) {
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {

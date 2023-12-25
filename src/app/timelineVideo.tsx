@@ -25,6 +25,7 @@ export class TimelineVideo {
   propertiesUI: HTMLDivElement;
   transformUIContainer: HTMLDivElement;
   snappingEnabled: boolean;
+  playheadScalingOffset: number;
   constructor(
     inPoint: number,
     startPoint: number,
@@ -38,7 +39,8 @@ export class TimelineVideo {
     timelineDuration: number,
     videoFPS: number,
     propertiesUI: HTMLDivElement,
-    snappingEnabled: boolean
+    snappingEnabled: boolean,
+    playheadScalingOffset: number
   ) {
     this.inPoint = inPoint;
     this.startPoint = startPoint;
@@ -53,6 +55,7 @@ export class TimelineVideo {
     this.transform = transform;
     this.propertiesUI = propertiesUI;
     this.snappingEnabled = snappingEnabled;
+    this.playheadScalingOffset = playheadScalingOffset;
     this.ui = document.createElement("div");
     this.transformUIContainer = document.createElement("div");
 
@@ -85,21 +88,7 @@ export class TimelineVideo {
     this.ui.appendChild(this.previewImage);
     timelineRows[timelineRowIndex].ui.appendChild(this.ui);
 
-    this.ui.setAttribute(
-      "style",
-      `
-            width: ${(
-              (timelineRows[timelineRowIndex].ui.clientWidth *
-                (this.endPoint - this.startPoint)) /
-              (timelineDuration * timelineFPS)
-            ).toString()}px; 
-            left: ${(
-              (timelineRows[timelineRowIndex].ui.clientWidth * startPoint) /
-              (timelineDuration * timelineFPS)
-            ).toString()}px;
-            top: 0px;
-        `
-    );
+    this.updatePreviewImage();
     this.leftSelect = document.createElement("button");
     this.leftSelect.className =
       "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
@@ -148,6 +137,9 @@ export class TimelineVideo {
   setSnappingEnabled(snappingEnabled: boolean) {
     this.snappingEnabled = snappingEnabled;
   }
+  setPlayheadScalingOffset(playheadScalingOffset: number) {
+    this.playheadScalingOffset = playheadScalingOffset;
+  }
 
   updatePreviewImage() {
     this.ui.setAttribute(
@@ -160,7 +152,7 @@ export class TimelineVideo {
             ).toString()}px; 
             left: ${(
               (this.timelineRows[this.timelineRowIndex].ui.clientWidth *
-                this.startPoint) /
+                (this.startPoint + this.playheadScalingOffset)) /
               (this.timelineDuration * this.timelineFPS)
             ).toString()}px;
             top: 0px;
@@ -223,7 +215,8 @@ export class TimelineVideo {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+          this.timelineRows[this.timelineRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       x = Math.floor(x - initalMousePosition);
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
@@ -369,7 +362,8 @@ export class TimelineVideo {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+          this.timelineRows[this.timelineRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
@@ -458,7 +452,8 @@ export class TimelineVideo {
         (this.timelineDuration *
           this.timelineFPS *
           (e.clientX - timelineRowRect.left)) /
-        this.timelineRows[this.timelineRowIndex].ui.clientWidth;
+          this.timelineRows[this.timelineRowIndex].ui.clientWidth -
+        this.playheadScalingOffset;
       let width = this.endPoint - this.startPoint;
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
