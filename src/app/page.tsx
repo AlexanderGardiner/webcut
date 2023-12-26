@@ -376,7 +376,7 @@ export default function Home() {
 
   function setPlayhead(value: number) {
     if (value >= 0) {
-      timelineTime = value;
+      timelineTime = value - playheadScalingOffset;
 
       movePlayhead();
     }
@@ -451,13 +451,15 @@ export default function Home() {
     let playheadRect = playheadDiv.current!.getBoundingClientRect();
     let playheadContainerRect = playheadParent.current!.getBoundingClientRect();
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
-    playheadScalingOffset = Math.ceil(
-      (timelineDuration *
-        fps *
-        (playheadRect.left - playheadContainerRect.left)) /
-        playheadContainerRect.width -
-        timelineTime
-    );
+    if (timelineTime + playheadScalingOffset >= 0) {
+      playheadScalingOffset = Math.ceil(
+        (timelineDuration *
+          fps *
+          (playheadRect.left - playheadContainerRect.left)) /
+          playheadContainerRect.width -
+          timelineTime
+      );
+    }
 
     console.log(playheadScalingOffset);
 
