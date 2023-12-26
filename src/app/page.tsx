@@ -16,6 +16,8 @@ export default function Home() {
   let previewCTX: CanvasRenderingContext2D;
   let playheadDiv = useRef<HTMLDivElement>(null);
   let playheadParent = useRef<HTMLDivElement>(null);
+  let zeroPointDiv = useRef<HTMLDivElement>(null);
+  let zeroPointParent = useRef<HTMLDivElement>(null);
   let mediaPool = useRef<HTMLDivElement>(null);
   let timelineRowsElement = useRef<HTMLDivElement>(null);
   let timelineAudioRowsElement = useRef<HTMLDivElement>(null);
@@ -49,6 +51,14 @@ export default function Home() {
           (timelineDuration * fps) -
         3
       ).toString() + "px";
+
+    zeroPointDiv.current!.style.left =
+      (
+        (timelineRows[0].ui.clientWidth * playheadScalingOffset) /
+          (timelineDuration * fps) -
+        3
+      ).toString() + "px";
+
     if (!rendering) {
       let canPlay = true;
       previewCTX!.clearRect(
@@ -474,6 +484,7 @@ export default function Home() {
     updatePlayheadScalingOffsets();
     updateElementSizes();
   }
+
   function updatePlayheadScalingOffsets() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -636,6 +647,8 @@ export default function Home() {
       initalized = true;
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
+      zeroPointDiv.current!.style.position = "relative";
+      zeroPointDiv.current!.style.width = "6px";
       previewCTX = previewCanvas.current!.getContext("2d")!;
 
       playheadParent.current!.addEventListener("mousedown", (e) => {
@@ -764,7 +777,7 @@ export default function Home() {
             </div>
             <input
               type="range"
-              min="0.01"
+              min="1"
               max="3600"
               step="0.01"
               defaultValue={timelineDuration}
@@ -774,7 +787,7 @@ export default function Home() {
             ></input>
             <input
               type="number"
-              min="0.01"
+              min="1"
               max="3600"
               defaultValue={timelineDuration.toString()}
               ref={timelineDurationInput}
@@ -783,8 +796,8 @@ export default function Home() {
             ></input>
             <input
               type="range"
-              min="0.01"
-              max="3600"
+              min="-10000"
+              max="10000"
               step="0.01"
               defaultValue={playheadScalingOffset.toString()}
               ref={playheadOffsetSlider}
@@ -808,6 +821,17 @@ export default function Home() {
           <div
             id="playheadDiv"
             ref={playheadDiv}
+            className={`relative top-0 left-0 right-0 bottom-0 flex flex-col items-center bg-slate-800 w-6 py-2 my-auto`}
+          ></div>
+        </div>
+
+        <div
+          className="relative flex flex-col w-[95vw] bg-white h-5 my-5"
+          ref={zeroPointParent}
+        >
+          <div
+            id="zeroPointDiv"
+            ref={zeroPointDiv}
             className={`relative top-0 left-0 right-0 bottom-0 flex flex-col items-center bg-slate-800 w-6 py-2 my-auto`}
           ></div>
         </div>
