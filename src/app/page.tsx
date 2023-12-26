@@ -461,15 +461,15 @@ export default function Home() {
     let playheadRect = playheadDiv.current!.getBoundingClientRect();
     let playheadContainerRect = playheadParent.current!.getBoundingClientRect();
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
-    if (timelineTime + playheadScalingOffset >= 0) {
-      playheadScalingOffset = Math.ceil(
-        (timelineDuration *
-          fps *
-          (playheadRect.left - playheadContainerRect.left)) /
-          playheadContainerRect.width -
-          timelineTime
-      );
-    }
+    // if (timelineTime + playheadScalingOffset >= 0) {
+    //   playheadScalingOffset = Math.ceil(
+    //     (timelineDuration *
+    //       fps *
+    //       (playheadRect.left - playheadContainerRect.left)) /
+    //       playheadContainerRect.width -
+    //       timelineTime
+    //   );
+    // }
 
     console.log(playheadScalingOffset);
 
@@ -647,7 +647,6 @@ export default function Home() {
       initalized = true;
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
-      zeroPointDiv.current!.style.position = "relative";
       zeroPointDiv.current!.style.width = "6px";
       previewCTX = previewCanvas.current!.getContext("2d")!;
 
@@ -796,8 +795,8 @@ export default function Home() {
             ></input>
             <input
               type="range"
-              min="-10000"
-              max="10000"
+              min="0"
+              max="3600"
               step="0.01"
               defaultValue={playheadScalingOffset.toString()}
               ref={playheadOffsetSlider}
@@ -813,7 +812,7 @@ export default function Home() {
           <h1>Properties</h1>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center w-full select-none">
+      <div className="flex flex-col items-center justify-center w-full select-nonet">
         <div
           className="relative flex flex-col w-[95vw] bg-white h-5 my-5"
           ref={playheadParent}
@@ -824,28 +823,28 @@ export default function Home() {
             className={`relative top-0 left-0 right-0 bottom-0 flex flex-col items-center bg-slate-800 w-6 py-2 my-auto`}
           ></div>
         </div>
-
         <div
-          className="relative flex flex-col w-[95vw] bg-white h-5 my-5"
+          className="relative flex flex-col w-[95vw] invisible flex h-80 left-0 top-0"
           ref={zeroPointParent}
         >
           <div
             id="zeroPointDiv"
             ref={zeroPointDiv}
-            className={`relative top-0 left-0 right-0 bottom-0 flex flex-col items-center bg-slate-800 w-6 py-2 my-auto`}
+            className={`z-40 relative top-0 left-0 right-0 visible flex flex-col items-center mt-0 bg-white h-64 w-6`}
           ></div>
         </div>
-
-        <div
-          id="timelineRows"
-          ref={timelineRowsElement}
-          className="flex flex-col items-center w-[95vw] overflow-clip"
-        ></div>
-        <div
-          id="timelineRows"
-          ref={timelineAudioRowsElement}
-          className="flex flex-col items-center w-[95vw] overflow-clip"
-        ></div>
+        <div className="z-1 flex flex-col items-center absolute">
+          <div
+            id="timelineRows"
+            ref={timelineRowsElement}
+            className="z-1 relative flex flex-col items-center w-[95vw] overflow-clip"
+          ></div>
+          <div
+            id="timelineRows"
+            ref={timelineAudioRowsElement}
+            className="z-1 relative flex flex-col items-center w-[95vw] overflow-clip"
+          ></div>
+        </div>
       </div>
     </div>
   );
