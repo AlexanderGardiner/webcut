@@ -552,6 +552,7 @@ export default function Home() {
                 i,
                 fps,
                 timelineDuration,
+                video.duration,
                 timelineRows[i].videos[j].videoFPS,
                 propertiesUI.current!,
                 snappingEnabled,
@@ -596,6 +597,8 @@ export default function Home() {
                 i,
                 fps,
                 timelineDuration,
+                audio.duration,
+                propertiesUI.current!,
                 snappingEnabled,
                 playheadScalingOffset
               )

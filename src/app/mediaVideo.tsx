@@ -214,6 +214,7 @@ export class MediaVideo {
             i,
             this.timelineFPS,
             this.timelineDuration,
+            video.duration,
             this.videoFPS,
             this.propertiesUI,
             this.snappingEnabled,
@@ -252,6 +253,8 @@ export class MediaVideo {
             i,
             this.timelineFPS,
             this.timelineDuration,
+            audio.duration,
+            this.propertiesUI,
             this.snappingEnabled,
             this.playheadScalingOffset
           )
