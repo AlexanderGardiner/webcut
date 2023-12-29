@@ -1,3 +1,4 @@
+import { SpeedAdjustment } from "./speedAdjustment";
 import { TimelineAudio } from "./timelineAudio";
 import { TimelineAudioRow } from "./timelineAudioRow";
 import { TimelineRow } from "./timelineRow";
@@ -207,6 +208,7 @@ export class MediaVideo {
               video.videoHeight,
               Math.random() * 2 * Math.PI
             ),
+            new SpeedAdjustment(1),
             this.timelineRows,
             this.timelineAudioRows,
             i,

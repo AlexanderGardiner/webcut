@@ -3,6 +3,8 @@ import TransformUI from "./components/transformUI";
 import { TimelineRow } from "./timelineRow";
 import { Transform } from "./transform";
 import { TimelineAudioRow } from "./timelineAudioRow";
+import SpeedUI from "./components/speedUI";
+import { SpeedAdjustment } from "./speedAdjustment";
 
 export class TimelineVideo {
   inPoint: number;
@@ -22,16 +24,20 @@ export class TimelineVideo {
   selected: boolean;
   videoFPS: number;
   transformUI: any;
+  speedUI: any;
   propertiesUI: HTMLDivElement;
   transformUIContainer: HTMLDivElement;
   snappingEnabled: boolean;
   playheadScalingOffset: number;
+  speedAdjustment: SpeedAdjustment;
+  speedAdjustmentUIContainer: HTMLDivElement;
   constructor(
     inPoint: number,
     startPoint: number,
     endPoint: number,
     video: HTMLVideoElement,
     transform: Transform,
+    speedAdjustment: SpeedAdjustment,
     timelineRows: TimelineRow[],
     timelineAudioRows: TimelineAudioRow[],
     timelineRowIndex: number,
@@ -53,18 +59,23 @@ export class TimelineVideo {
     this.timelineDuration = timelineDuration;
     this.videoFPS = videoFPS;
     this.transform = transform;
+    this.speedAdjustment = speedAdjustment;
     this.propertiesUI = propertiesUI;
     this.snappingEnabled = snappingEnabled;
     this.playheadScalingOffset = playheadScalingOffset;
     this.ui = document.createElement("div");
     this.transformUIContainer = document.createElement("div");
+    this.speedAdjustmentUIContainer = document.createElement("div");
 
     this.transformUI = createRoot(this.transformUIContainer).render(
       <TransformUI transform={this.transform} />
     );
 
-    this.selected = false;
+    this.speedUI = createRoot(this.speedAdjustmentUIContainer).render(
+      <SpeedUI speedAdjustment={this.speedAdjustment} />
+    );
 
+    this.selected = false;
     this.ui.className =
       "absolute flex bg-slate-100 py-5 px-0 pointer-events-none";
     this.previewImage = document.createElement("img");
@@ -339,10 +350,12 @@ export class TimelineVideo {
       this.ui.classList.remove("opacity-100");
       this.ui.classList.add("opacity-50");
       this.propertiesUI.appendChild(this.transformUIContainer);
+      this.propertiesUI.appendChild(this.speedAdjustmentUIContainer);
     } else {
       this.ui.classList.remove("opacity-50");
       this.ui.classList.add("opacity-100");
       this.propertiesUI.removeChild(this.transformUIContainer);
+      this.propertiesUI.appendChild(this.speedAdjustmentUIContainer);
     }
   }
 

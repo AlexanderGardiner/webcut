@@ -546,6 +546,7 @@ export default function Home() {
                 timelineRows[i].videos[j].endPoint,
                 video,
                 timelineRows[i].videos[j].transform,
+                timelineRows[i].videos[j].speedAdjustment,
                 timelineRows,
                 timelineAudioRows,
                 i,
