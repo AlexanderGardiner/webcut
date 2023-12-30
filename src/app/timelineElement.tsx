@@ -56,7 +56,6 @@ export class TimelineElement {
       "absolute w-full overflow-hidden h-full pointer-events-auto";
     this.previewImage.setAttribute("style", "top:0px;");
     this.ui.appendChild(this.previewImage);
-    timelineRows[rowIndex].ui.appendChild(this.ui);
 
     this.leftSelect = document.createElement("button");
     this.leftSelect.className =

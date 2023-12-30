@@ -52,7 +52,7 @@ export class TimelineAudio extends TimelineElement {
       );
     }
     this.previewImage.src = previewImageCanvas.toDataURL("image/png");
-
+    timelineAudioRows[this.rowIndex].ui.appendChild(this.ui);
     this.updatePreviewImage();
   }
 

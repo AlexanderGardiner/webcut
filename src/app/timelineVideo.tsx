@@ -78,22 +78,8 @@ export class TimelineVideo extends TimelineElement {
       );
     }
     this.previewImage.src = previewImageCanvas.toDataURL("image/png");
-
+    timelineRows[this.rowIndex].ui.appendChild(this.ui);
     this.updatePreviewImage();
-    this.leftSelect = document.createElement("button");
-    this.leftSelect.className =
-      "absolute flex bg-slate-100 w-[5px] py-0 bg-white h-10 px-0 pointer-events-auto";
-    this.leftSelect.setAttribute(
-      "style",
-      `
-            top: 0px;
-            z-index: 3;
-        `
-    );
-    this.leftSelect.addEventListener(
-      "mousedown",
-      this.startStartPointAdjustment.bind(this)
-    );
   }
 
   removeHTML() {
