@@ -456,24 +456,9 @@ export default function Home() {
   }
 
   function updateTimelineSize(event: ChangeEvent<HTMLInputElement>) {
-    console.log("update", timelineDuration);
     let targetElement = event.target as HTMLInputElement;
-    let playheadRect = playheadDiv.current!.getBoundingClientRect();
-    let playheadContainerRect = playheadParent.current!.getBoundingClientRect();
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
-    // if (timelineTime + playheadScalingOffset >= 0) {
-    //   playheadScalingOffset = Math.ceil(
-    //     (timelineDuration *
-    //       fps *
-    //       (playheadRect.left - playheadContainerRect.left)) /
-    //       playheadContainerRect.width -
-    //       timelineTime
-    //   );
-    // }
 
-    console.log(playheadScalingOffset);
-
-    console.log("update", timelineDuration);
     if (targetElement != timelineDurationSlider.current!) {
       timelineDurationSlider.current!.value = timelineDuration.toString();
     } else {

@@ -61,7 +61,7 @@ export class TimelineVideo extends TimelineElement {
     );
 
     this.speedUI = createRoot(this.speedAdjustmentUIContainer).render(
-      <SpeedUI speedAdjustment={this.speedAdjustment} />
+      <SpeedUI speedAdjustment={this.speedAdjustment} timelineVideo={this} />
     );
 
     const previewImageCanvas = document.createElement("canvas");
@@ -100,5 +100,25 @@ export class TimelineVideo extends TimelineElement {
       this.propertiesUI.removeChild(this.transformUIContainer);
       this.propertiesUI.removeChild(this.speedAdjustmentUIContainer);
     }
+  }
+
+  updatePreviewImage() {
+    this.ui.setAttribute(
+      "style",
+      `
+            width: ${(
+              (this.timelineRows[this.rowIndex].ui.clientWidth *
+                (this.endPoint - this.startPoint)) /
+              (this.timelineDuration * this.timelineFPS) /
+              this.speedAdjustment.speed
+            ).toString()}px; 
+            left: ${(
+              (this.timelineRows[this.rowIndex].ui.clientWidth *
+                (this.startPoint + this.playheadScalingOffset)) /
+              (this.timelineDuration * this.timelineFPS)
+            ).toString()}px;
+            top: 0px;
+        `
+    );
   }
 }

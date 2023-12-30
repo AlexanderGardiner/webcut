@@ -1,10 +1,15 @@
 import React, { ChangeEvent, useRef, useState } from "react";
 import { Transform } from "../transform";
 import { SpeedAdjustment } from "../speedAdjustment";
+import { TimelineVideo } from "../timelineVideo";
 interface ChildComponentProps {
   speedAdjustment: SpeedAdjustment;
+  timelineVideo: TimelineVideo;
 }
-const SpeedUI: React.FC<ChildComponentProps> = ({ speedAdjustment }) => {
+const SpeedUI: React.FC<ChildComponentProps> = ({
+  speedAdjustment,
+  timelineVideo,
+}) => {
   let speed = speedAdjustment.speed;
 
   return (
@@ -24,7 +29,7 @@ const SpeedUI: React.FC<ChildComponentProps> = ({ speedAdjustment }) => {
               name="text-input"
               defaultValue={speed}
               className="w-3/5 text-black"
-              onChange={(e) => speedAdjustment.updateSpeed(e)}
+              onChange={(e) => speedAdjustment.updateSpeed(e, timelineVideo)}
             ></input>
           </div>
         </div>
