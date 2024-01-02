@@ -101,24 +101,4 @@ export class TimelineVideo extends TimelineElement {
       this.propertiesUI.removeChild(this.speedAdjustmentUIContainer);
     }
   }
-
-  updatePreviewImage() {
-    this.ui.setAttribute(
-      "style",
-      `
-            width: ${(
-              (this.timelineRows[this.rowIndex].ui.clientWidth *
-                (this.endPoint - this.startPoint)) /
-              (this.timelineDuration * this.timelineFPS) /
-              this.speedAdjustment.speed
-            ).toString()}px; 
-            left: ${(
-              (this.timelineRows[this.rowIndex].ui.clientWidth *
-                (this.startPoint + this.playheadScalingOffset)) /
-              (this.timelineDuration * this.timelineFPS)
-            ).toString()}px;
-            top: 0px;
-        `
-    );
-  }
 }

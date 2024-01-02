@@ -678,6 +678,9 @@ export default function Home() {
         if (e.code == "Delete") {
           deleteElements();
         }
+        if (e.code == "KeyT") {
+          console.log(timelineRows);
+        }
         if (e.code == "KeyL") {
           snappingEnabled = !snappingEnabled;
           for (let i = timelineRows.length - 1; i >= 0; i--) {
