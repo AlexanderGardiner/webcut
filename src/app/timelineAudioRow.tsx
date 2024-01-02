@@ -15,6 +15,5 @@ export class TimelineAudioRow {
   }
   addAudio(timelineAudio: TimelineAudio) {
     this.audios.push(timelineAudio);
-    console.log(this.audios);
   }
 }

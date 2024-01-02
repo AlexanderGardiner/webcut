@@ -13,14 +13,11 @@ export class SpeedAdjustment {
   ) {
     this.speed = parseFloat(event?.target.value);
     if (this.speed) {
-      console.log("before" + timelineVideo.startPoint);
-      console.log("before" + timelineVideo.endPoint);
       timelineVideo.endPoint =
         timelineVideo.startPoint +
         (timelineVideo.endPoint - timelineVideo.startPoint) *
           (timelineVideo.video.playbackRate / this.speed);
       timelineVideo.video.playbackRate = timelineVideo.speedAdjustment.speed;
-      console.log(timelineVideo.endPoint);
       timelineVideo.updatePreviewImage();
     }
   }

@@ -177,9 +177,6 @@ export class MediaVideo {
     }
     if (x < 0) {
       canAddVideo = false;
-      console.log(this.playheadScalingOffset);
-      console.log(this.timelineRows);
-      console.log(x);
     }
     if (canAddVideo) {
       let video = document.createElement("video");
@@ -223,7 +220,6 @@ export class MediaVideo {
         );
 
         video.pause();
-        console.log(this.timelineRows);
       });
 
       audioVideo.addEventListener("loadeddata", () => {

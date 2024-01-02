@@ -89,11 +89,13 @@ export default function Home() {
               timelineRows[i].videos[j].video.pause();
               timelineRows[i].videos[j].video.currentTime = parseFloat(
                 (
-                  Math.floor(
-                    timelineTime -
-                      timelineRows[i].videos[j].startPoint +
-                      timelineRows[i].videos[j].inPoint
-                  ) / fps
+                  (timelineRows[i].videos[j].video.playbackRate *
+                    Math.floor(
+                      timelineTime -
+                        timelineRows[i].videos[j].startPoint +
+                        timelineRows[i].videos[j].inPoint
+                    )) /
+                  fps
                 ).toFixed(3)
               );
             }
@@ -101,11 +103,13 @@ export default function Home() {
               timelineRows[i].videos[j].video.play();
               timelineRows[i].videos[j].video.currentTime = parseFloat(
                 (
-                  Math.floor(
-                    timelineTime -
-                      timelineRows[i].videos[j].startPoint +
-                      timelineRows[i].videos[j].inPoint
-                  ) / fps
+                  (timelineRows[i].videos[j].video.playbackRate *
+                    Math.floor(
+                      timelineTime -
+                        timelineRows[i].videos[j].startPoint +
+                        timelineRows[i].videos[j].inPoint
+                    )) /
+                  fps
                 ).toFixed(3)
               );
             }
@@ -246,9 +250,10 @@ export default function Home() {
             previewCTX!.translate(-centerX, -centerY);
             await setVideoCurrentTime(
               timelineRows[i].videos[j].video,
-              (frame -
-                timelineRows[i].videos[j].startPoint +
-                timelineRows[i].videos[j].inPoint) /
+              (timelineRows[i].videos[j].video.playbackRate *
+                (frame -
+                  timelineRows[i].videos[j].startPoint +
+                  timelineRows[i].videos[j].inPoint)) /
                 frameRate
             );
             previewCTX!.drawImage(
@@ -270,7 +275,6 @@ export default function Home() {
     }
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
     console.log("FRAMES COMPILED");
-    alert("FRAMES COMPILED");
     await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
     await ffmpeg.exec([
       "-i",
@@ -289,7 +293,6 @@ export default function Home() {
       "output.mp4",
     ]);
     console.log("STARTING AUDIO PROCESSING");
-    alert("STARTING AUDIO PROCESSING");
     for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
         let audioElement = timelineAudioRows[i].audios[j].audio.src;
@@ -339,16 +342,13 @@ export default function Home() {
     }
 
     const finalOutput = await ffmpeg.readFile("output.mp4");
-    const videoElement = document.createElement("video");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(
       new Blob([finalOutput], { type: "video/mp4" })
     );
-    videoElement.src = a.href;
-    a.download = "merged_video.mp4";
-    a.textContent = "Download merged video";
+    a.download = "Export.mp4";
+    a.textContent = "Download exported video";
     document.body.appendChild(a);
-    document.body.appendChild(videoElement);
     rendering = false;
   }
   function secondsToHHMMSS(seconds: number) {
