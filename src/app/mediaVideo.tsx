@@ -205,7 +205,7 @@ export class MediaVideo {
               video.videoHeight,
               Math.random() * 2 * Math.PI
             ),
-            new SpeedAdjustment(1),
+            new SpeedAdjustment(1, video),
             this.timelineRows,
             this.timelineAudioRows,
             i,

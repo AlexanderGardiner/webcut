@@ -3,8 +3,9 @@ import { TimelineVideo } from "./timelineVideo";
 
 export class SpeedAdjustment {
   speed: number;
-  constructor(speed: number) {
+  constructor(speed: number, video: HTMLVideoElement) {
     this.speed = speed;
+    video.playbackRate = this.speed;
   }
 
   updateSpeed(

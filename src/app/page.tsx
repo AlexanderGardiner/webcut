@@ -10,6 +10,8 @@ import { TimelineAudioRow } from "./timelineAudioRow";
 import { TimelineAudio } from "./timelineAudio";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import { Transform } from "./transform";
+import { SpeedAdjustment } from "./speedAdjustment";
 export default function Home() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -26,6 +28,7 @@ export default function Home() {
   let timelineDurationSlider = useRef<HTMLInputElement>(null);
   let timelineDurationInput = useRef<HTMLInputElement>(null);
   let playheadOffsetSlider = useRef<HTMLInputElement>(null);
+  let mediaFileInput = useRef<HTMLInputElement>(null);
   let propertiesUI = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
@@ -362,12 +365,12 @@ export default function Home() {
     )}:${String(remainingSeconds).padStart(2, "0")}`;
   }
 
-  function importVideo(file: File) {
+  function importVideo(file: File, videoFPS: number) {
     let video = document.createElement("video");
 
     let media = URL.createObjectURL(file);
     video.src = media;
-    let videoFPS = window.prompt("Input the FPS of the video", "60");
+
     mediaVideos.push(
       new MediaVideo(
         video,
@@ -376,7 +379,7 @@ export default function Home() {
         timelineAudioRows,
         fps,
         timelineDuration,
-        parseInt(videoFPS!),
+        videoFPS,
         propertiesUI.current!,
         snappingEnabled,
         playheadScalingOffset
@@ -631,9 +634,80 @@ export default function Home() {
       }
     }
   }
+
+  async function loadProject(files: FileList) {
+    let fileReader = new FileReader();
+
+    fileReader.onload = () => {
+      if (typeof fileReader.result === "string") {
+        const data = JSON.parse(fileReader.result);
+        let projectTimelineRows = data.timelineRows;
+        console.log(projectTimelineRows);
+        console.log(data);
+        for (let i = 0; i < projectTimelineRows.length; i++) {
+          let projectTimelineRow = projectTimelineRows[i];
+          for (let j = 0; j < projectTimelineRow.length; j++) {
+            let video = document.createElement("video");
+            for (let k = 0; k < files.length; k++) {
+              console.log(projectTimelineRow[j].sourceFile);
+              console.log(files[k].name);
+              if (projectTimelineRow[j].sourceFile == files[k].name) {
+                importVideo(files[k], projectTimelineRow[j].videoFPS);
+                video.src = mediaVideos[mediaVideos.length - 1].video.src;
+              }
+            }
+
+            video.addEventListener("loadeddata", () => {
+              timelineRows[i].addVideo(
+                new TimelineVideo(
+                  projectTimelineRow[j].inPoint,
+                  projectTimelineRow[j].startPoint,
+                  projectTimelineRow[j].endPoint,
+                  video,
+                  new Transform(
+                    projectTimelineRow[j].transform.x,
+                    projectTimelineRow[j].transform.y,
+                    projectTimelineRow[j].transform.width,
+                    projectTimelineRow[j].transform.height,
+                    projectTimelineRow[j].transform.rotation
+                  ),
+                  new SpeedAdjustment(
+                    projectTimelineRow[j].speedAdjustment.speed,
+                    video
+                  ),
+                  timelineRows,
+                  timelineAudioRows,
+                  i,
+                  fps,
+                  timelineDuration,
+                  projectTimelineRow[j].maxDuration,
+                  projectTimelineRow[j].videoFPS,
+                  propertiesUI.current!,
+                  snappingEnabled,
+                  playheadScalingOffset
+                )
+              );
+              video.pause();
+            });
+            video.play();
+          }
+        }
+      }
+    };
+    let projectJSONIndex = 0;
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].type == "application/json") {
+        console.log("JSON");
+        projectJSONIndex = i;
+      }
+    }
+    fileReader.readAsText(files[projectJSONIndex]);
+  }
   useEffect(() => {
     if (!initalized) {
       initalized = true;
+      mediaFileInput.current!.setAttribute("directory", "");
+      mediaFileInput.current!.setAttribute("webkitdirectory", "");
       playheadDiv.current!.style.position = "relative";
       playheadDiv.current!.style.width = "6px";
       zeroPointDiv.current!.style.width = "6px";
@@ -728,15 +802,32 @@ export default function Home() {
         <div className="border-2 border-gray-400 items-start text-left w-full items-center overflow-y-scroll max-h-[50vh]">
           <input
             onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                importVideo(e.target.files[0]);
+              if (e.target.files) {
+                let loadingProject = false;
+                for (let i = 0; i < e.target.files.length; i++) {
+                  if (e.target.files[i].type == "application/json") {
+                    loadingProject = true;
+                    loadProject(e.target.files);
+                  }
+                }
+                if (!loadingProject) {
+                  for (let i = 0; i < e.target.files.length; i++) {
+                    importVideo(
+                      e.target.files[i],
+                      parseInt(
+                        window.prompt("Input the FPS of the video", "60")!
+                      )
+                    );
+                  }
+                }
               }
             }}
             type="file"
             id="input"
             name="input_video"
-            accept="video/mp4, video/mov"
+            accept="video/mp4, video/mov, "
             className="mx-2 my-2"
+            ref={mediaFileInput}
           />
           <div
             id="mediaPool"
