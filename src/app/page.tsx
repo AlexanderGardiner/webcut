@@ -12,6 +12,8 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import { Transform } from "./timelineComponents/transform";
 import { SpeedAdjustment } from "./timelineComponents/speedAdjustment";
+import { downloadZip } from "client-zip";
+
 export default function Editor() {
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
@@ -635,6 +637,76 @@ export default function Editor() {
     }
   }
 
+  async function exportProject() {
+    let mediaToDownload = [];
+    for (let i = 0; i < mediaVideos.length; i++) {}
+    let projectJSON: {
+      projectName: string;
+      timelineRows: {
+        inPoint: number;
+        startPoint: number;
+        endPoint: number;
+      }[][];
+      timelineAudioRows: any[][];
+    } = {
+      projectName: "testing",
+      timelineRows: [[], [], []],
+      timelineAudioRows: [[], [], []],
+    };
+    for (let i = 0; i < timelineRows.length; i++) {
+      let videos = timelineRows[i].videos;
+      for (let j = 0; j < videos.length; j++) {
+        let response = await fetch(timelineRows[i].videos[j].video.src);
+        let blob = await response.blob();
+        mediaToDownload.push(
+          new File([blob], "timelineVideo" + i + ".mp4", { type: blob.type })
+        );
+        let videoObject = {
+          inPoint: videos[j].inPoint,
+          startPoint: videos[j].startPoint,
+          endPoint: videos[j].endPoint,
+          sourceFile: "timelineVideo" + i + ".mp4",
+          transform: videos[j].transform,
+          speedAdjustment: videos[j].speedAdjustment,
+          videoFPS: videos[j].videoFPS,
+          maxDuration: videos[j].maxDuration,
+        };
+        projectJSON.timelineRows[i].push(videoObject);
+      }
+    }
+
+    for (let i = 0; i < timelineAudioRows.length; i++) {
+      let audios = timelineAudioRows[i].audios;
+      for (let j = 0; j < audios.length; j++) {
+        let response = await fetch(timelineAudioRows[i].audios[j].audio.src);
+        let blob = await response.blob();
+        mediaToDownload.push(
+          new File([blob], "timelineAudio" + i + ".mp3", { type: blob.type })
+        );
+        let audioObject = {
+          inPoint: audios[j].inPoint,
+          startPoint: audios[j].startPoint,
+          endPoint: audios[j].endPoint,
+          sourceFile: "timelineAudio" + i + ".mp3",
+          maxDuration: audios[j].maxDuration,
+        };
+        projectJSON.timelineAudioRows[i].push(audioObject);
+      }
+    }
+    mediaToDownload.push({
+      name: "project.json",
+      input: JSON.stringify(projectJSON),
+    });
+
+    const zip = await downloadZip(mediaToDownload).blob();
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(zip);
+    link.download = "project.zip";
+    link.click();
+    link.remove();
+  }
+
   async function loadProject(files: FileList) {
     let fileReader = new FileReader();
 
@@ -791,6 +863,7 @@ export default function Editor() {
           deleteElements();
         }
         if (e.code == "KeyT") {
+          exportProject();
           console.log(timelineRows);
         }
         if (e.code == "KeyL") {
