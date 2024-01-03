@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useRef, useState } from "react";
-import { Transform } from "../transform";
+import { Transform } from "../timelineComponents/transform";
 interface ChildComponentProps {
   transform: Transform;
 }

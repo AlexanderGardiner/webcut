@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
-import TransformUI from "./components/transformUI";
+import TransformUI from "../components/transformUI";
 import { TimelineRow } from "./timelineRow";
 import { Transform } from "./transform";
 import { TimelineAudioRow } from "./timelineAudioRow";
-import SpeedUI from "./components/speedUI";
+import SpeedUI from "../components/speedUI";
 import { SpeedAdjustment } from "./speedAdjustment";
 import { TimelineElement } from "./timelineElement";
 

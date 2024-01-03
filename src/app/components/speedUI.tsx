@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useRef, useState } from "react";
-import { Transform } from "../transform";
-import { SpeedAdjustment } from "../speedAdjustment";
-import { TimelineVideo } from "../timelineVideo";
+import { Transform } from "../timelineComponents/transform";
+import { SpeedAdjustment } from "../timelineComponents/speedAdjustment";
+import { TimelineVideo } from "../timelineComponents/timelineVideo";
 interface ChildComponentProps {
   speedAdjustment: SpeedAdjustment;
   timelineVideo: TimelineVideo;
