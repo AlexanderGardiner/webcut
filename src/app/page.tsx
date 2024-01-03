@@ -642,6 +642,7 @@ export default function Home() {
       if (typeof fileReader.result === "string") {
         const data = JSON.parse(fileReader.result);
         let projectTimelineRows = data.timelineRows;
+        let projectTimelineAudioRows = data.timelineAudioRows;
         console.log(projectTimelineRows);
         console.log(data);
         for (let i = 0; i < projectTimelineRows.length; i++) {
@@ -656,7 +657,7 @@ export default function Home() {
                 video.src = mediaVideos[mediaVideos.length - 1].video.src;
               }
             }
-
+            video.muted = true;
             video.addEventListener("loadeddata", () => {
               timelineRows[i].addVideo(
                 new TimelineVideo(
@@ -690,6 +691,43 @@ export default function Home() {
               video.pause();
             });
             video.play();
+          }
+        }
+
+        for (let i = 0; i < projectTimelineAudioRows.length; i++) {
+          let projectTimelineAudioRow = projectTimelineAudioRows[i];
+          for (let j = 0; j < projectTimelineAudioRow.length; j++) {
+            let audio = document.createElement("audio");
+            for (let k = 0; k < files.length; k++) {
+              console.log(projectTimelineAudioRow[j].sourceFile);
+              console.log(files[k].name);
+              if (projectTimelineAudioRow[j].sourceFile == files[k].name) {
+                importVideo(files[k], projectTimelineAudioRow[j].videoFPS);
+                audio.src = mediaVideos[mediaVideos.length - 1].video.src;
+              }
+            }
+
+            audio.addEventListener("loadeddata", () => {
+              timelineAudioRows[i].addAudio(
+                new TimelineAudio(
+                  projectTimelineAudioRow[j].inPoint,
+                  projectTimelineAudioRow[j].startPoint,
+                  projectTimelineAudioRow[j].endPoint,
+                  audio,
+                  timelineRows,
+                  timelineAudioRows,
+                  i,
+                  fps,
+                  timelineDuration,
+                  projectTimelineAudioRow[j].maxDuration,
+                  propertiesUI.current!,
+                  snappingEnabled,
+                  playheadScalingOffset
+                )
+              );
+              audio.pause();
+            });
+            audio.play();
           }
         }
       }
