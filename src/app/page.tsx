@@ -347,14 +347,13 @@ export default function Editor() {
     }
 
     const finalOutput = await ffmpeg.readFile("output.mp4");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(
       new Blob([finalOutput], { type: "video/mp4" })
     );
-    a.download = "Export.mp4";
-    a.textContent = "Download exported video";
-    document.body.appendChild(a);
-    rendering = false;
+    link.download = "Export.mp4";
+    link.click();
+    link.remove();
   }
   function secondsToHHMMSS(seconds: number) {
     const hours = Math.floor(seconds / 3600);
@@ -911,6 +910,12 @@ export default function Editor() {
     <div>
       <div className="grid grid-cols-5 gap-4 max-w-full my-5 mx-5">
         <div className="border-2 border-gray-400 items-start text-left w-full items-center overflow-y-scroll max-h-[50vh]">
+          <button onClick={exportProject} className="mx-2 my-2">
+            Download Project
+          </button>
+          <button onClick={render} className="mx-2 my-2">
+            Export Video
+          </button>
           <h5>Edit Project</h5>
           <input
             onChange={(e) => {
