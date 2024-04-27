@@ -192,13 +192,14 @@ export class MediaVideo {
           startPoint +
           Math.round(video.duration * this.videoFPS) *
             (this.timelineFPS / this.videoFPS);
+        let aspectRatio = video.videoWidth / video.videoHeight;
         this.timelineRows[i].addVideo(
           new TimelineVideo(
             0,
             startPoint,
             endPoint,
             video,
-            new Transform(0, 0, video.videoWidth, video.videoHeight, 0),
+            new Transform(0, 0, 900 * aspectRatio, 1600 / aspectRatio, 0),
             new SpeedAdjustment(1, video),
             this.timelineRows,
             this.timelineAudioRows,

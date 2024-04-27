@@ -974,7 +974,7 @@ export default function Editor() {
               }
             }}
             type="file"
-            accept="video/mp4, video/mov, "
+            accept="video/*"
             className="mx-2 my-2"
           />
           <div
