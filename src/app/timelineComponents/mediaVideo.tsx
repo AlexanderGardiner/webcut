@@ -198,13 +198,7 @@ export class MediaVideo {
             startPoint,
             endPoint,
             video,
-            new Transform(
-              0,
-              0,
-              video.videoWidth,
-              video.videoHeight,
-              Math.random() * 2 * Math.PI
-            ),
+            new Transform(0, 0, video.videoWidth, video.videoHeight, 0),
             new SpeedAdjustment(1, video),
             this.timelineRows,
             this.timelineAudioRows,

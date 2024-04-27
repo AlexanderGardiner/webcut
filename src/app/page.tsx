@@ -1,6 +1,6 @@
 "use client";
 import React, { ChangeEvent, useEffect, useRef } from "react";
-import { FaPlay, FaLock, FaUnlock } from "react-icons/fa";
+import { FaPlay, FaLock, FaUnlock, FaTimes } from "react-icons/fa";
 import { TimelineRow } from "./timelineComponents/timelineRow";
 
 import { MediaVideo } from "./timelineComponents/mediaVideo";
@@ -32,6 +32,8 @@ export default function Editor() {
   let playheadOffsetSlider = useRef<HTMLInputElement>(null);
   let mediaFileInput = useRef<HTMLInputElement>(null);
   let propertiesUI = useRef<HTMLDivElement>(null);
+  let renderLog = useRef<HTMLTextAreaElement>(null);
+  let renderLogContainer = useRef<HTMLDivElement>(null);
   let fps = 30;
   let timelineRows: TimelineRow[] = [];
   let timelineAudioRows: TimelineAudioRow[] = [];
@@ -205,7 +207,15 @@ export default function Editor() {
     });
   }
 
+  async function logRenderData(data: string) {
+    console.log("\n" + data + "\n");
+    renderLog.current!.innerHTML = renderLog.current!.innerHTML + data + "\n\n";
+  }
+
   async function render() {
+    renderLogContainer.current!.classList.remove("hidden");
+    renderLogContainer.current!.classList.add("visible");
+    logRenderData("Starting Rendering");
     let frameRate = 30;
     let lastFrame = 0;
     let canvas = previewCanvas.current!;
@@ -234,6 +244,8 @@ export default function Editor() {
         }
       }
     }
+
+    logRenderData("Video length determined");
     for (let frame = 0; frame <= lastFrame; frame++) {
       timelineTime = (frame * fps) / frameRate;
       previewCTX!.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -277,10 +289,15 @@ export default function Editor() {
         frame.toString() + ".webp",
         await fetchFile(canvas.toDataURL("image/webp"))
       );
+      logRenderData("Loaded frame " + frame + " to canvas");
     }
+    logRenderData("All Frames put to canvas");
+    logRenderData("Compiling frames to mp4");
     await ffmpeg.exec(["-framerate", "30", "-i", "%d.webp", "output.mp4"]);
-    console.log("FRAMES COMPILED");
+    logRenderData("Compiled frames to mp4");
     await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
+
+    logRenderData("Adding blank audio to mp4 for further audio processing");
     await ffmpeg.exec([
       "-i",
       "input.mp4",
@@ -297,9 +314,12 @@ export default function Editor() {
       "-shortest",
       "output.mp4",
     ]);
-    console.log("STARTING AUDIO PROCESSING");
+    logRenderData("Added blank audio to mp4 for further audio processing");
     for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
+        logRenderData(
+          "Starting audio processing on audio " + j + " on row " + i
+        );
         let audioElement = timelineAudioRows[i].audios[j].audio.src;
         await ffmpeg.writeFile("audioInput.mp4", await fetchFile(audioElement));
         await ffmpeg.exec([
@@ -324,6 +344,7 @@ export default function Editor() {
           "experimental",
           "trimmedAudio.mp4",
         ]);
+        logRenderData("Trimmed audio " + j + " on row " + i);
         await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
 
         await ffmpeg.exec([
@@ -343,10 +364,12 @@ export default function Editor() {
           "0:v",
           "output.mp4",
         ]);
+        logRenderData("Combined audio " + j + " on row " + i + " with mp4");
       }
     }
 
     const finalOutput = await ffmpeg.readFile("output.mp4");
+    logRenderData("Render Complete");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(
       new Blob([finalOutput], { type: "video/mp4" })
@@ -714,15 +737,11 @@ export default function Editor() {
         const data = JSON.parse(fileReader.result);
         let projectTimelineRows = data.timelineRows;
         let projectTimelineAudioRows = data.timelineAudioRows;
-        console.log(projectTimelineRows);
-        console.log(data);
         for (let i = 0; i < projectTimelineRows.length; i++) {
           let projectTimelineRow = projectTimelineRows[i];
           for (let j = 0; j < projectTimelineRow.length; j++) {
             let video = document.createElement("video");
             for (let k = 0; k < files.length; k++) {
-              console.log(projectTimelineRow[j].sourceFile);
-              console.log(files[k].name);
               if (projectTimelineRow[j].sourceFile == files[k].name) {
                 importVideo(files[k], projectTimelineRow[j].videoFPS);
                 video.src = mediaVideos[mediaVideos.length - 1].video.src;
@@ -770,8 +789,6 @@ export default function Editor() {
           for (let j = 0; j < projectTimelineAudioRow.length; j++) {
             let audio = document.createElement("audio");
             for (let k = 0; k < files.length; k++) {
-              console.log(projectTimelineAudioRow[j].sourceFile);
-              console.log(files[k].name);
               if (projectTimelineAudioRow[j].sourceFile == files[k].name) {
                 importVideo(files[k], projectTimelineAudioRow[j].videoFPS);
                 audio.src = mediaVideos[mediaVideos.length - 1].video.src;
@@ -806,7 +823,6 @@ export default function Editor() {
     let projectJSONIndex = 0;
     for (let i = 0; i < files.length; i++) {
       if (files[i].type == "application/json") {
-        console.log("JSON");
         projectJSONIndex = i;
       }
     }
@@ -861,9 +877,8 @@ export default function Editor() {
         if (e.code == "Delete") {
           deleteElements();
         }
-        if (e.code == "KeyT") {
+        if (e.code == "KeyE") {
           exportProject();
-          console.log(timelineRows);
         }
         if (e.code == "KeyL") {
           snappingEnabled = !snappingEnabled;
@@ -904,6 +919,11 @@ export default function Editor() {
     updateTimelineDurations();
     updatePlayheadScalingOffsets();
     updateElementSizes();
+  }
+
+  function hideRenderLog() {
+    renderLogContainer.current!.classList.add("hidden");
+    renderLogContainer.current!.classList.remove("visible");
   }
 
   return (
@@ -1055,6 +1075,23 @@ export default function Editor() {
             ref={timelineAudioRowsElement}
             className="z-1 relative flex flex-col items-center w-[95vw] overflow-clip"
           ></div>
+        </div>
+      </div>
+      <div
+        ref={renderLogContainer}
+        className="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex w-3/5 h-3/5"
+      >
+        <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-center w-full h-full">
+          <div
+            className="absolute text-3xl z-10 text-black top-5 right-5 w-10 h-10 cursor-pointer"
+            onClick={hideRenderLog}
+          >
+            <FaTimes className="z-10 text-black w-full h-full"></FaTimes>
+          </div>
+          <textarea
+            ref={renderLog}
+            className="z-5 text-black justify-center w-full h-full"
+          ></textarea>
         </div>
       </div>
     </div>
