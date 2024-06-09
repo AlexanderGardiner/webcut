@@ -1,5 +1,7 @@
+"use client";
 import { TimelineVideo } from "./timelineVideo";
 
+// Provides a class for a timeline row
 export class TimelineRow {
   videos: TimelineVideo[];
   ui: HTMLDivElement;
@@ -13,6 +15,8 @@ export class TimelineRow {
     this.ui.setAttribute("timelineRowId", id.toString());
     parent.appendChild(this.ui);
   }
+
+  // Adds a video to this row
   addVideo(timelineVideo: TimelineVideo) {
     this.videos.push(timelineVideo);
   }

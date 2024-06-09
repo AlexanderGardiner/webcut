@@ -1,5 +1,7 @@
+"use client";
 import { ChangeEvent } from "react";
 
+// Provides a class to set the transform properties of a video
 export class Transform {
   x: number;
   y: number;

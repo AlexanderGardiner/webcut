@@ -1,3 +1,4 @@
+"use client";
 import { SpeedAdjustment } from "./speedAdjustment";
 import { TimelineAudio } from "./timelineAudio";
 import { TimelineAudioRow } from "./timelineAudioRow";
@@ -5,6 +6,7 @@ import { TimelineRow } from "./timelineRow";
 import { TimelineVideo } from "./timelineVideo";
 import { Transform } from "./transform";
 
+// Defines a video that has been imported
 export class MediaVideo {
   video: HTMLVideoElement;
   previewImage: HTMLImageElement;
@@ -28,6 +30,7 @@ export class MediaVideo {
     snappingEnabled: boolean,
     playheadScalingOffset: number
   ) {
+    // Initializing variables
     this.video = video;
     this.previewImage = document.createElement("img");
     this.timelineRows = timelineRows;
@@ -40,10 +43,13 @@ export class MediaVideo {
     this.propertiesUI = propertiesUI;
     this.snappingEnabled = snappingEnabled;
     this.playheadScalingOffset = playheadScalingOffset;
+
+    // Waits for video to load
     this.video.addEventListener("loadeddata", () => {
       previewImageCanvas.width = this.video.videoWidth;
       previewImageCanvas.height = this.video.videoHeight;
 
+      // Draws the video to the canvas
       if (previewImageCTX) {
         previewImageCTX.drawImage(
           this.video,
@@ -55,6 +61,8 @@ export class MediaVideo {
       }
       this.previewImage.src = previewImageCanvas.toDataURL("image/png");
       parent.appendChild(this.previewImage);
+
+      // Adds listener for when the video is dragged
       this.previewImage.addEventListener("mousedown", (e) => {
         e.preventDefault();
         this.dragVideo(e, this.previewImage, this.video);
@@ -64,12 +72,15 @@ export class MediaVideo {
     this.video.play();
   }
 
+  // Drags the video
   dragVideo(
     event: MouseEvent,
     videoImage: HTMLImageElement,
     video: HTMLVideoElement
   ) {
     event.preventDefault();
+
+    // Creates a preview element for visibility while dragging
     let tempVideoImage = document.createElement("img");
 
     tempVideoImage.src = videoImage.src;
@@ -91,12 +102,15 @@ export class MediaVideo {
       this.updateDraggedVideoPosition(e, tempVideoImage);
     };
 
+    // Handles a mouseup
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       document.body.removeEventListener("mousemove", handleMouseMove);
       document.body.removeEventListener("mouseup", handleMouseUp);
       tempVideoImage.removeAttribute("src");
       tempVideoImage.remove();
+
+      // Removes event listeners
       for (let i = 0; i < this.timelineRows.length; i++) {
         this.timelineRows[i].ui.removeEventListener(
           "mouseup",
@@ -105,6 +119,7 @@ export class MediaVideo {
       }
     };
 
+    // Places video if video can be placed
     const handleMouseUpOnTimeline = (e: MouseEvent) => {
       e.preventDefault();
       let target = e.target as HTMLDivElement;
@@ -138,29 +153,35 @@ export class MediaVideo {
     }
   }
 
+  // Sets snapping for the video
   setSnappingEnabled(snappingEnabled: boolean) {
     this.snappingEnabled = snappingEnabled;
   }
 
+  // Moves the video
   updateDraggedVideoPosition(e: MouseEvent, tempVideo: HTMLImageElement) {
     tempVideo.style.left = e.x + "px";
     tempVideo.style.top = e.y + "px";
   }
 
+  // Sets scaling factor
   setTimelineDuration(timelineDuration: number) {
     this.timelineDuration = timelineDuration;
   }
 
+  // Sets offset factor
   setPlayheadScalingOffset(playheadScalingOffset: number) {
     this.playheadScalingOffset = playheadScalingOffset;
   }
 
+  // Places a video
   endDragVideo(
     e: MouseEvent,
     tempVideo: HTMLImageElement,
     i: number,
     originalVideo: HTMLVideoElement
   ) {
+    // Checks if space is empty where the video is to be placed
     var rect = this.timelineRows[i].ui.getBoundingClientRect();
     var x =
       (this.timelineDuration * (e.clientX - rect.left)) / rect.width -
@@ -178,13 +199,16 @@ export class MediaVideo {
     if (x < 0) {
       canAddVideo = false;
     }
+
     if (canAddVideo) {
+      // Adds the video, splitting the video and audio tracks
       let video = document.createElement("video");
       let audioVideo = document.createElement("video");
       video.src = originalVideo.src;
       audioVideo.src = originalVideo.src;
       video.muted = true;
 
+      // Waits for the video to load
       video.addEventListener("loadeddata", () => {
         let startPoint =
           Math.round(x * this.videoFPS) * (this.timelineFPS / this.videoFPS);
@@ -217,6 +241,7 @@ export class MediaVideo {
         video.pause();
       });
 
+      // Waits for the audio to load
       audioVideo.addEventListener("loadeddata", () => {
         let startPoint =
           Math.round(x * this.videoFPS) * (this.timelineFPS / this.videoFPS);
@@ -224,6 +249,8 @@ export class MediaVideo {
           startPoint +
           Math.round(video.duration * this.videoFPS) *
             (this.timelineFPS / this.videoFPS);
+
+        // Sets up audio gain control
         let audio = document.createElement("audio");
         let audioContext = new window.AudioContext();
         let source = audioContext.createMediaElementSource(audioVideo);

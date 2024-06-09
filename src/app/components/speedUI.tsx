@@ -1,3 +1,4 @@
+"use client";
 import React, { ChangeEvent, useRef, useState } from "react";
 import { Transform } from "../timelineComponents/transform";
 import { SpeedAdjustment } from "../timelineComponents/speedAdjustment";
@@ -6,6 +7,8 @@ interface ChildComponentProps {
   speedAdjustment: SpeedAdjustment;
   timelineVideo: TimelineVideo;
 }
+
+// A component where the desired speed of the video can be set
 const SpeedUI: React.FC<ChildComponentProps> = ({
   speedAdjustment,
   timelineVideo,

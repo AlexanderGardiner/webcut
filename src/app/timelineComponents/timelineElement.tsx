@@ -1,3 +1,4 @@
+"use client";
 import { TimelineRow } from "./timelineRow";
 import { TimelineAudioRow } from "./timelineAudioRow";
 
@@ -47,6 +48,7 @@ export class TimelineElement {
     this.propertiesUI = propertiesUI;
     this.ui = document.createElement("div");
 
+    // Sets control points to resize video in timeline
     this.selected = false;
     this.ui.className =
       "absolute flex bg-slate-100 py-5 px-0 pointer-events-none";
@@ -99,13 +101,17 @@ export class TimelineElement {
     });
   }
 
+  // Sets whether the element can snap
   setSnappingEnabled(snappingEnabled: boolean) {
     this.snappingEnabled = snappingEnabled;
   }
+
+  // Sets the playhead offset
   setPlayheadScalingOffset(playheadScalingOffset: number) {
     this.playheadScalingOffset = playheadScalingOffset;
   }
 
+  // Updates the preview image of the element
   updatePreviewImage() {
     this.ui.setAttribute(
       "style",
@@ -125,6 +131,7 @@ export class TimelineElement {
     );
   }
 
+  // Drags the video along the timeline on a mousedown
   mouseDown(event: MouseEvent) {
     let canDrag = true;
     event.preventDefault();
@@ -141,6 +148,7 @@ export class TimelineElement {
       );
     };
 
+    // Updates image
     const handleMouseMove = (e: MouseEvent) => {
       document.body.removeEventListener("mouseup", handleMouseUp, true);
       document.body.removeEventListener(
@@ -158,6 +166,7 @@ export class TimelineElement {
     document.body.addEventListener("mousemove", handleMouseMove.bind(this));
   }
 
+  // Drags the element
   dragElement(event: MouseEvent) {
     event.preventDefault();
     var videoRect = this.ui.getBoundingClientRect();
@@ -171,6 +180,7 @@ export class TimelineElement {
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
+    // On a mouse move, move the element
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
 
@@ -183,9 +193,12 @@ export class TimelineElement {
           this.timelineRows[this.rowIndex].ui.clientWidth -
         this.playheadScalingOffset;
       x = Math.floor(x - initalMousePosition);
+
+      // Snap the element to other elements if enabled
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            // @ts-ignore
             if (this.timelineRows[i].videos[j] != this) {
               if (
                 x >
@@ -228,6 +241,7 @@ export class TimelineElement {
 
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
+            // @ts-ignore
             if (this.timelineAudioRows[i].audios[j] != this) {
               if (
                 x >
@@ -289,15 +303,18 @@ export class TimelineElement {
     document.body.addEventListener("mousemove", handleMouseMove);
   }
 
+  // Removes the UI
   removeHTML() {
     this.ui.remove();
   }
 
+  // Deselects
   deselect() {
     this.selected = false;
     this.updateSelectedUI();
   }
 
+  // Updates the UI based on selection
   updateSelectedUI() {
     if (this.selected) {
       this.ui.classList.remove("opacity-100");
@@ -308,6 +325,7 @@ export class TimelineElement {
     }
   }
 
+  // Adjusts the start point of the element
   startStartPointAdjustment(event: MouseEvent) {
     event.preventDefault();
 
@@ -316,6 +334,7 @@ export class TimelineElement {
       document.body.removeEventListener("mousemove", handleMouseMove);
     };
 
+    // Checks for snapping and updates image
     const handleMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       var timelineRowRect =
@@ -329,6 +348,7 @@ export class TimelineElement {
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            // @ts-ignore
             if (this.timelineRows[i].videos[j] != this) {
               if (
                 x >
@@ -352,6 +372,7 @@ export class TimelineElement {
 
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
+            // @ts-ignore
             if (this.timelineAudioRows[i].audios[j] != this) {
               if (
                 x >
@@ -396,10 +417,13 @@ export class TimelineElement {
     document.body.addEventListener("mouseup", handleMouseUp, true);
     document.body.addEventListener("mousemove", handleMouseMove);
   }
+
+  // Sets timeline length
   setTimelineDuration(timelineDuration: number) {
     this.timelineDuration = timelineDuration;
   }
 
+  // Adjusts the endpoint of the element, checking for snapping
   startEndPointAdjustment(event: MouseEvent) {
     event.preventDefault();
 
@@ -422,6 +446,7 @@ export class TimelineElement {
       if (this.snappingEnabled) {
         for (let i = this.timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineRows[i].videos.length; j++) {
+            // @ts-ignore
             if (this.timelineRows[i].videos[j] != this) {
               if (
                 x >
@@ -445,6 +470,7 @@ export class TimelineElement {
 
         for (let i = this.timelineAudioRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < this.timelineAudioRows[i].audios.length; j++) {
+            // @ts-ignore
             if (this.timelineAudioRows[i].audios[j] != this) {
               if (
                 x >

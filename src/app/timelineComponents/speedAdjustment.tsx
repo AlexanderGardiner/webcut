@@ -1,6 +1,8 @@
+"use client";
 import { ChangeEvent } from "react";
 import { TimelineVideo } from "./timelineVideo";
 
+// Allows setting of the speed of elements
 export class SpeedAdjustment {
   speed: number;
   constructor(speed: number, video: HTMLVideoElement) {

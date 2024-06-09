@@ -1,3 +1,4 @@
+"use client";
 import { createRoot } from "react-dom/client";
 import TransformUI from "../components/transformUI";
 import { TimelineRow } from "./timelineRow";
@@ -38,6 +39,7 @@ export class TimelineAudio extends TimelineElement {
     );
     this.audio = audio;
 
+    // Defines the canvas
     const previewImageCanvas = document.createElement("canvas");
     previewImageCanvas.width = 1600;
     previewImageCanvas.height = 900;
@@ -56,6 +58,7 @@ export class TimelineAudio extends TimelineElement {
     this.updatePreviewImage();
   }
 
+  // Removes element
   removeHTML() {
     super.removeHTML();
     this.audio.pause();

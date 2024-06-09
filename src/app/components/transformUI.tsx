@@ -1,8 +1,11 @@
+"use client";
 import React, { ChangeEvent, useRef, useState } from "react";
 import { Transform } from "../timelineComponents/transform";
 interface ChildComponentProps {
   transform: Transform;
 }
+
+// A component where the desired transformation of the video can be set
 const TransformUI: React.FC<ChildComponentProps> = ({ transform }) => {
   let xPosition = transform.x;
   let yPosition = transform.y;

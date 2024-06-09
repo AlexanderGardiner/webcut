@@ -1,5 +1,7 @@
+"use client";
 import { TimelineAudio } from "./timelineAudio";
 
+// Is a row on the timeline that audio can be placed upon
 export class TimelineAudioRow {
   audios: TimelineAudio[];
   ui: HTMLDivElement;

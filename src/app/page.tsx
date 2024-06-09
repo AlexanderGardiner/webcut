@@ -4,6 +4,7 @@ import { FaPlay, FaLock, FaUnlock, FaTimes } from "react-icons/fa";
 import { TimelineRow } from "./timelineComponents/timelineRow";
 
 import { MediaVideo } from "./timelineComponents/mediaVideo";
+import { TimelineElement } from "./timelineComponents/timelineElement";
 import { TimelineVideo } from "./timelineComponents/timelineVideo";
 import {} from "react-icons/fa";
 import { TimelineAudioRow } from "./timelineComponents/timelineAudioRow";
@@ -15,6 +16,7 @@ import { SpeedAdjustment } from "./timelineComponents/speedAdjustment";
 import { downloadZip } from "client-zip";
 
 export default function Editor() {
+  // Setup references
   let snappingEnabled = true;
   let previewCanvas = useRef<HTMLCanvasElement>(null);
   let previewCTX: CanvasRenderingContext2D;
@@ -48,6 +50,7 @@ export default function Editor() {
   let rendering = false;
   let playheadScalingOffset = 0;
 
+  // Moves the playhead one step
   function step() {
     currentTime = performance.now();
 
@@ -75,6 +78,7 @@ export default function Editor() {
         previewCanvas.current!.height
       );
 
+      // Updates the position of all of the videos
       for (let i = timelineRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineRows[i].videos.length; j++) {
           if (
@@ -140,6 +144,7 @@ export default function Editor() {
         }
       }
 
+      // Updates the position of all of the audios
       for (let i = timelineAudioRows.length - 1; i >= 0; i--) {
         for (let j = 0; j < timelineAudioRows[i].audios.length; j++) {
           if (
@@ -189,6 +194,8 @@ export default function Editor() {
         timelineTime += 1;
       }
     }
+
+    // Sets fps compensation
     let actualFPS = 1000 / (currentTime - previousTime);
     previousTime = currentTime;
     setTimeout(() => {
@@ -196,6 +203,7 @@ export default function Editor() {
     }, (1000 / fps) * (actualFPS / fps));
   }
 
+  // Sets the time of the video
   async function setVideoCurrentTime(video: HTMLVideoElement, time: number) {
     await new Promise((resolve) => {
       const timeUpdateHandler = () => {
@@ -207,11 +215,13 @@ export default function Editor() {
     });
   }
 
+  // Logs the rendering data
   async function logRenderData(data: string) {
     console.log("\n" + data + "\n");
     renderLog.current!.innerHTML = renderLog.current!.innerHTML + data + "\n\n";
   }
 
+  // Renders the video using FFmpeg
   async function render() {
     renderLogContainer.current!.classList.remove("hidden");
     renderLogContainer.current!.classList.add("visible");
@@ -228,6 +238,8 @@ export default function Editor() {
     ffmpeg.on("log", ({ message }) => {
       console.log(message);
     });
+
+    // Gets the length of the video
     rendering = true;
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -246,6 +258,8 @@ export default function Editor() {
     }
 
     logRenderData("Video length determined");
+
+    // Draws frames and compiles them to a video
     for (let frame = 0; frame <= lastFrame; frame++) {
       timelineTime = (frame * fps) / frameRate;
       previewCTX!.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -297,6 +311,7 @@ export default function Editor() {
     logRenderData("Compiled frames to mp4");
     await ffmpeg.exec(["-i", "output.mp4", "-c", "copy", "input.mp4"]);
 
+    // Adds the audio to the video
     logRenderData("Adding blank audio to mp4 for further audio processing");
     await ffmpeg.exec([
       "-i",
@@ -368,6 +383,7 @@ export default function Editor() {
       }
     }
 
+    // Exports the video
     const finalOutput = await ffmpeg.readFile("output.mp4");
     logRenderData("Render Complete");
     const link = document.createElement("a");
@@ -378,6 +394,8 @@ export default function Editor() {
     link.click();
     link.remove();
   }
+
+  // Converts seconds to hours, minutes and seconds
   function secondsToHHMMSS(seconds: number) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -389,6 +407,7 @@ export default function Editor() {
     )}:${String(remainingSeconds).padStart(2, "0")}`;
   }
 
+  // Imports a video
   function importVideo(file: File, videoFPS: number) {
     let video = document.createElement("video");
 
@@ -411,6 +430,7 @@ export default function Editor() {
     );
   }
 
+  // Moves the playhead
   function setPlayhead(value: number) {
     if (value >= 0) {
       timelineTime = value - playheadScalingOffset;
@@ -419,6 +439,7 @@ export default function Editor() {
     }
   }
 
+  // Moves the playhead
   function movePlayhead() {
     playing = false;
     var rect = timelineRows[0].ui.getBoundingClientRect();
@@ -428,6 +449,7 @@ export default function Editor() {
         Math.round(
           (timelineDuration * fps * (e.clientX - rect.left)) / rect.width
         ) - playheadScalingOffset;
+      // Snaps the playhead
       if (snappingEnabled && !playing) {
         for (let i = timelineRows.length - 1; i >= 0; i--) {
           for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -478,10 +500,12 @@ export default function Editor() {
     document.body.addEventListener("mousemove", handleMouseMove);
   }
 
+  // Play the timeline
   function toggleVideoPlay() {
     playing = !playing;
   }
 
+  // Adjust the scale of the timeline
   function updateTimelineSize(event: ChangeEvent<HTMLInputElement>) {
     let targetElement = event.target as HTMLInputElement;
     timelineDuration = parseFloat((event.target as HTMLInputElement).value);
@@ -497,6 +521,7 @@ export default function Editor() {
     updateElementSizes();
   }
 
+  // Update the offset for the playhead
   function updatePlayheadScalingOffsets() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -518,6 +543,7 @@ export default function Editor() {
     }
   }
 
+  // Update the length of the timelines
   function updateTimelineDurations() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -535,6 +561,7 @@ export default function Editor() {
     }
   }
 
+  // Cuts an element at the playhead
   async function makeCut() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -625,6 +652,7 @@ export default function Editor() {
     }
   }
 
+  // Updates the sizes of elements
   function updateElementSizes() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -639,6 +667,7 @@ export default function Editor() {
     }
   }
 
+  // Delete elements
   function deleteElements() {
     for (let i = timelineRows.length - 1; i >= 0; i--) {
       for (let j = 0; j < timelineRows[i].videos.length; j++) {
@@ -659,6 +688,7 @@ export default function Editor() {
     }
   }
 
+  // Exports the current project
   async function exportProject() {
     let mediaToDownload = [];
     for (let i = 0; i < mediaVideos.length; i++) {}
@@ -675,6 +705,8 @@ export default function Editor() {
       timelineRows: [[], [], []],
       timelineAudioRows: [[], [], []],
     };
+
+    // Saves a json format
     for (let i = 0; i < timelineRows.length; i++) {
       let videos = timelineRows[i].videos;
       for (let j = 0; j < videos.length; j++) {
@@ -720,6 +752,7 @@ export default function Editor() {
       input: JSON.stringify(projectJSON),
     });
 
+    // Downloads a zip
     const zip = await downloadZip(mediaToDownload).blob();
 
     const link = document.createElement("a");
@@ -729,9 +762,11 @@ export default function Editor() {
     link.remove();
   }
 
+  // Loads a project
   async function loadProject(files: FileList) {
     let fileReader = new FileReader();
 
+    // Parses the json
     fileReader.onload = () => {
       if (typeof fileReader.result === "string") {
         const data = JSON.parse(fileReader.result);
@@ -828,7 +863,9 @@ export default function Editor() {
     }
     fileReader.readAsText(files[projectJSONIndex]);
   }
+
   useEffect(() => {
+    // Wait for load
     if (!initalized) {
       initalized = true;
       mediaFileInput.current!.setAttribute("directory", "");
@@ -859,6 +896,7 @@ export default function Editor() {
       previousTime = performance.now() - 1000 / fps;
       step();
 
+      // Gets inputs
       document.body.addEventListener("keyup", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -914,6 +952,7 @@ export default function Editor() {
     }
   }, []);
 
+  // Updates the offset of the playhead
   function updatePlayheadOffset(event: ChangeEvent<HTMLInputElement>) {
     playheadScalingOffset = parseFloat(event.target.value);
     updateTimelineDurations();
@@ -921,6 +960,7 @@ export default function Editor() {
     updateElementSizes();
   }
 
+  // Toggles the visibility of the render log
   function hideRenderLog() {
     renderLogContainer.current!.classList.add("hidden");
     renderLogContainer.current!.classList.remove("visible");

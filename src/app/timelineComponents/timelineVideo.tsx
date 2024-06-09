@@ -1,3 +1,4 @@
+"use client";
 import { createRoot } from "react-dom/client";
 import TransformUI from "../components/transformUI";
 import { TimelineRow } from "./timelineRow";
@@ -49,6 +50,7 @@ export class TimelineVideo extends TimelineElement {
       propertiesUI
     );
 
+    // Defines parameters
     this.video = video;
     this.videoFPS = videoFPS;
     this.transform = transform;
@@ -56,6 +58,7 @@ export class TimelineVideo extends TimelineElement {
     this.transformUIContainer = document.createElement("div");
     this.speedAdjustmentUIContainer = document.createElement("div");
 
+    // Creates UI elements
     this.transformUI = createRoot(this.transformUIContainer).render(
       <TransformUI transform={this.transform} />
     );
@@ -64,6 +67,7 @@ export class TimelineVideo extends TimelineElement {
       <SpeedUI speedAdjustment={this.speedAdjustment} timelineVideo={this} />
     );
 
+    // Draws a preview image
     const previewImageCanvas = document.createElement("canvas");
     previewImageCanvas.width = this.video.videoWidth;
     previewImageCanvas.height = this.video.videoHeight;
@@ -82,6 +86,7 @@ export class TimelineVideo extends TimelineElement {
     this.updatePreviewImage();
   }
 
+  // Deletes element
   removeHTML() {
     super.removeHTML();
     this.video.pause();
@@ -91,6 +96,7 @@ export class TimelineVideo extends TimelineElement {
     this.transformUIContainer.remove();
   }
 
+  // Updates the UI
   updateSelectedUI() {
     super.updateSelectedUI();
     if (this.selected) {
