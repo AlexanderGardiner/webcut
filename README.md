@@ -11,6 +11,7 @@ This is a client side web-based video editor built using HTML video elements to 
 <img src="https://img.shields.io/badge/-HTML5-E34F26?style=flat&logo=html5&logoColor=white" height="25"><!---->
 <img src="https://img.shields.io/badge/-JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black" height="25"><!---->
 <img src="https://img.shields.io/badge/-CSS3-1572B6?style=flat&logo=css3&logoColor=white" height="25"><!---->
+<img src="https://img.shields.io/badge/-FFmpeg-007ACC?style=flat&logo=ffmpeg&logoColor=white" height="25"><!---->
 
 ## Features
 
