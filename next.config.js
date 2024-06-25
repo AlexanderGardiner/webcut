@@ -1,4 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = { basePath: "/webcut" };
 
 module.exports = nextConfig;
